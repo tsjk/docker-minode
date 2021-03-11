@@ -1,12 +1,19 @@
 """Blind tests, starting the minode process"""
 import unittest
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
 import time
 
 import psutil
+
+try:
+    socket.socket().bind(('127.0.0.1', 7656))
+    i2p_port_free = True
+except (OSError, socket.error):
+    i2p_port_free = False
 
 
 class TestProcessProto(unittest.TestCase):
@@ -113,3 +120,13 @@ class TestProcess(TestProcessProto):
         else:
             if self._listen:
                 self.fail('No listening connection found')
+
+
+@unittest.skipIf(i2p_port_free, 'No running i2pd detected')
+class TestProcessI2P(TestProcess):
+    """Test minode process with --i2p and no IP"""
+    _process_cmd = ['minode', '--i2p', '--no-ip']
+    _connection_limit = 4
+    _wait_time = 120
+    _listen = True
+    _listening_port = 8448

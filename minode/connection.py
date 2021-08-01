@@ -260,7 +260,8 @@ class Connection(threading.Thread):
                 while len(to_send) > 0:
                     if len(to_send) > 10000:
                         # We limit size of inv messaged to 10000 entries
-                        # because they might time out in very slow networks (I2P)
+                        # because they might time out
+                        # in very slow networks (I2P)
                         pack = random.sample(to_send, 10000)
                         self.send_queue.put(message.Inv(pack))
                         to_send.difference_update(pack)

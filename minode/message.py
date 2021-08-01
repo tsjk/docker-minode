@@ -7,7 +7,7 @@ import time
 from . import shared, structure
 
 
-class Header(object):
+class Header():
     def __init__(self, command, payload_length, payload_checksum):
         self.command = command
         self.payload_length = payload_length
@@ -42,7 +42,7 @@ class Header(object):
         return cls(command, payload_length, payload_checksum)
 
 
-class Message(object):
+class Message():
     def __init__(self, command, payload):
         self.command = command
         self.payload = payload
@@ -84,7 +84,7 @@ class Message(object):
         return cls(h.command, payload)
 
 
-class Version(object):
+class Version():
     def __init__(
         self, host, port, protocol_version=shared.protocol_version,
         services=shared.services, nonce=shared.nonce,
@@ -127,8 +127,8 @@ class Version(object):
 
         payload = m.payload
 
-        (  # unused: net_addr_local
-            protocol_version, services, t, net_addr_remote, _, nonce
+        (  # unused: timestamp, net_addr_local
+            protocol_version, services, _, net_addr_remote, _, nonce
         ) = struct.unpack('>IQQ26s26s8s', payload[:80])
 
         net_addr_remote = structure.NetAddrNoPrefix.from_bytes(net_addr_remote)
@@ -154,7 +154,7 @@ class Version(object):
         return cls(host, port, protocol_version, services, nonce, user_agent)
 
 
-class Inv(object):
+class Inv():
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -189,7 +189,7 @@ class Inv(object):
         return cls(vectors)
 
 
-class GetData(object):
+class GetData():
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -224,7 +224,7 @@ class GetData(object):
         return cls(vectors)
 
 
-class Addr(object):
+class Addr():
     def __init__(self, addresses):
         self.addresses = addresses
 

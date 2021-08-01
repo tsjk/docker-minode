@@ -9,7 +9,7 @@ import time
 from . import shared
 
 
-class VarInt(object):
+class VarInt():
     def __init__(self, n):
         self.n = n
 
@@ -43,7 +43,7 @@ class VarInt(object):
         return cls(n)
 
 
-class Object(object):
+class Object():
     def __init__(
         self, nonce, expires_time, object_type, version,
         stream_number, object_payload
@@ -138,7 +138,7 @@ class Object(object):
         return hashlib.sha512(self.to_bytes()[8:]).digest()
 
 
-class NetAddrNoPrefix(object):
+class NetAddrNoPrefix():
     def __init__(self, services, host, port):
         self.services = services
         self.host = host
@@ -170,7 +170,7 @@ class NetAddrNoPrefix(object):
         return cls(services, host, port)
 
 
-class NetAddr(object):
+class NetAddr():
     def __init__(self, services, host, port, stream=shared.stream):
         self.stream = stream
         self.services = services

@@ -145,9 +145,8 @@ class Manager(threading.Thread):
                 with shared.objects_lock:
                     pickle.dump(shared.objects, dst, protocol=3)
                 logging.debug('Saved objects')
-        except Exception as e:
-            logging.warning('Error while saving objects')
-            logging.warning(e)
+        except Exception:
+            logging.warning('Error while saving objects', exc_info=True)
 
     @staticmethod
     def pickle_nodes():

@@ -105,27 +105,31 @@ def load_data():
             os.path.join(shared.data_directory, 'objects.pickle'), 'br'
         ) as src:
             shared.objects = pickle.load(src)
-    except Exception as e:
-        logging.warning('Error while loading objects from disk.')
-        logging.warning(e)
+    except FileNotFoundError:
+        pass  # first start
+    except Exception:
+        logging.warning(
+            'Error while loading objects from disk.', exc_info=True)
 
     try:
         with open(
             os.path.join(shared.data_directory, 'nodes.pickle'), 'br'
         ) as src:
             shared.node_pool = pickle.load(src)
-    except Exception as e:
-        logging.warning('Error while loading nodes from disk.')
-        logging.warning(e)
+    except FileNotFoundError:
+        pass
+    except Exception:
+        logging.warning('Error while loading nodes from disk.', exc_info=True)
 
     try:
         with open(
             os.path.join(shared.data_directory, 'i2p_nodes.pickle'), 'br'
         ) as src:
             shared.i2p_node_pool = pickle.load(src)
-    except Exception as e:
-        logging.warning('Error while loading nodes from disk.')
-        logging.warning(e)
+    except FileNotFoundError:
+        pass
+    except Exception:
+        logging.warning('Error while loading nodes from disk.', exc_info=True)
 
     with open(
         os.path.join(shared.source_directory, 'core_nodes.csv'),
@@ -157,7 +161,7 @@ def bootstrap_from_dns():
                 'Adding %s to unchecked_node_pool'
                 ' based on DNS bootstrap method', item[4][0])
     except Exception:
-        logging.error('Error during DNS bootstrap', exc_info=True)
+        logging.info('Error during DNS bootstrap', exc_info=True)
 
 
 def start_ip_listener():
@@ -171,22 +175,22 @@ def start_ip_listener():
                 shared.listening_port, family=socket.AF_INET6)
             listener_ipv6.start()
         except Exception:
-            logging.warning(
+            logging.info(
                 'Error while starting IPv6 listener on port %s',
                 shared.listening_port, exc_info=True)
 
     try:
         listener_ipv4 = Listener(shared.listening_host, shared.listening_port)
         listener_ipv4.start()
-    except Exception:
+    except OSError as e:
         if listener_ipv6:
-            logging.warning(
+            logging.info(
                 'Error while starting IPv4 listener on port %s.'
                 ' However the IPv6 one seems to be working'
-                ' and will probably accept IPv4 connections.',
-                shared.listening_port)
+                ' and will probably accept IPv4 connections.',  # 48 on macos
+                shared.listening_port, exc_info=(e.errno not in (48, 98)))
         else:
-            logging.error(
+            logging.warning(
                 'Error while starting IPv4 listener on port %s.'
                 'You will not receive incoming connections.'
                 ' Please check your port configuration',
@@ -210,7 +214,7 @@ def start_i2p_listener():
                 dest_priv = src.read()
                 logging.debug('Loaded I2P destination private key.')
         except Exception:
-            logging.warning(
+            logging.info(
                 'Error while loading I2P destination private key.',
                 exc_info=True)
 

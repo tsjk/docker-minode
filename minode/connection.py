@@ -141,24 +141,31 @@ class Connection(threading.Thread):
             if not data:
                 self.status = 'disconnected'
                 self.s.close()
-                logging.info(
+                logging.debug(
                     'Disconnected from %s:%s', self.host_print, self.port)
                 break
             time.sleep(0.2)
 
     def _connect(self):
-        logging.debug('Connecting to %s:%s', self.host_print, self.port)
+        peer_str = '{0.host_print}:{0.port}'.format(self)
+        logging.debug('Connecting to %s', peer_str)
 
         try:
             self.s = socket.create_connection((self.host, self.port), 10)
             self.status = 'connected'
+            logging.debug('Established TCP connection to %s', peer_str)
+        except socket.timeout:
+            pass
+        except OSError as e:
+            # unreachable, refused, no route
+            (logging.info if e.errno not in (101, 111, 113)
+             else logging.debug)(
+                     'Connection to %s failed. Reason: %s', peer_str, e)
+        except Exception:
             logging.info(
-                'Established TCP connection to %s:%s',
-                self.host_print, self.port)
-        except Exception as e:
-            logging.warning(
-                'Connection to %s:%s failed. Reason: %s',
-                self.host_print, self.port, e)
+                'Connection to %s failed.', peer_str, exc_info=True)
+
+        if self.status != 'connected':
             self.status = 'failed'
 
     def _send_data(self):
@@ -332,6 +339,9 @@ class Connection(threading.Thread):
                 self.status = 'disconnecting'
                 self.send_queue.put(None)
             else:
+                logging.info(
+                    '%s:%s claims to be %s',
+                    self.host_print, self.port, version.user_agent)
                 self.send_queue.put(message.Message(b'verack', b''))
                 self.verack_sent = True
                 self.remote_version = version
@@ -405,7 +415,7 @@ class Connection(threading.Thread):
             self.send_queue.put(message.Message(b'pong', b''))
 
         elif m.command == b'error':
-            logging.error(
+            logging.warning(
                 '%s:%s -> error: %s', self.host_print, self.port, m.payload)
 
         else:
@@ -415,6 +425,8 @@ class Connection(threading.Thread):
         if self.vectors_to_get and len(self.vectors_requested) < 100:
             self.vectors_to_get.difference_update(shared.objects.keys())
             if self.vectors_to_get:
+                logging.info(
+                    'Queued %s vectors to get', len(self.vectors_to_get))
                 if len(self.vectors_to_get) > 64:
                     pack = random.sample(self.vectors_to_get, 64)
                     self.send_queue.put(message.GetData(pack))
@@ -437,12 +449,14 @@ class Connection(threading.Thread):
                 if t < time.time() - 10 * 60}
             if to_re_request:
                 self.vectors_to_get.update(to_re_request)
-                logging.debug(
+                logging.info(
                     'Re-requesting %i objects from %s:%s',
                     len(to_re_request), self.host_print, self.port)
 
     def _send_objects(self):
         if self.vectors_to_send:
+            logging.info(
+                'Preparing to send %s objects', len(self.vectors_to_send))
             if len(self.vectors_to_send) > 16:
                 to_send = random.sample(self.vectors_to_send, 16)
                 self.vectors_to_send.difference_update(to_send)

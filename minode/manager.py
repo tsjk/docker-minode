@@ -23,7 +23,7 @@ class Manager(threading.Thread):
         self.last_pickled_nodes = time.time()
         # Publish destination 5-15 minutes after start
         self.last_published_i2p_destination = \
-            time.time() - 50 * 60 + random.uniform(-1, 1) * 300
+            time.time() - 50 * 60 + random.uniform(-1, 1) * 300  # nosec
 
     def run(self):
         while True:

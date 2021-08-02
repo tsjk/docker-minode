@@ -15,7 +15,7 @@ from .manager import Manager
 from .listener import Listener
 
 
-def handler(s, f):
+def handler(s, f):  # pylint: disable=unused-argument
     logging.info('Gracefully shutting down MiNode')
     shared.shutting_down = True
 

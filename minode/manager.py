@@ -8,7 +8,7 @@ import random
 import threading
 import time
 
-from . import pow, shared, structure
+from . import proofofwork, shared, structure
 from .connection import Connection
 from .i2p import I2PDialer
 
@@ -187,4 +187,4 @@ class Manager(threading.Thread):
                 b'\x00' * 8, int(time.time() + 2 * 3600),
                 shared.i2p_dest_obj_type, shared.i2p_dest_obj_version,
                 1, dest_pub_raw)
-            pow.do_pow_and_publish(obj)
+            proofofwork.do_pow_and_publish(obj)

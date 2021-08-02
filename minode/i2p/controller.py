@@ -3,13 +3,12 @@ import base64
 import logging
 import os
 import socket
-import threading
 import time
 
-from .util import receive_line, pub_from_priv
+from .util import I2PThread, pub_from_priv
 
 
-class I2PController(threading.Thread):
+class I2PController(I2PThread):
     def __init__(self, state, host='127.0.0.1', port=7656, dest_priv=b''):
         super().__init__(name='I2P Controller')
 
@@ -40,15 +39,6 @@ class I2PController(threading.Thread):
             self.generate_destination()
 
         self.create_session()
-
-    def _receive_line(self):
-        line = receive_line(self.s)
-        # logging.debug('I2PController <- %s', line)
-        return line
-
-    def _send(self, command):
-        # logging.debug('I2PController -> %s', command)
-        self.s.sendall(command)
 
     def init_connection(self):
         self._send(b'HELLO VERSION MIN=3.0 MAX=3.3\n')

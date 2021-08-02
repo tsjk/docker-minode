@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import socket
-import threading
 
-from .util import receive_line
+from .util import I2PThread
 
 
-class I2PListener(threading.Thread):
+class I2PListener(I2PThread):
     def __init__(self, state, nick, host='127.0.0.1', port=7656):
         super().__init__(name='I2P Listener')
 
@@ -20,15 +19,6 @@ class I2PListener(threading.Thread):
         self.version_reply = []
 
         self.new_socket()
-
-    def _receive_line(self):
-        line = receive_line(self.s)
-        # logging.debug('I2PListener <- %s', line)
-        return line
-
-    def _send(self, command):
-        # logging.debug('I2PListener -> %s', command)
-        self.s.sendall(command)
 
     def new_socket(self):
         self.s = socket.create_connection((self.host, self.port))

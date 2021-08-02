@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 import socket
-import threading
 
-from .util import receive_line
+from .util import I2PThread
 
 
-class I2PDialer(threading.Thread):
+class I2PDialer(I2PThread):
     def __init__(
         self, state, destination, nick, sam_host='127.0.0.1', sam_port=7656
     ):
@@ -33,15 +32,6 @@ class I2PDialer(threading.Thread):
                 False, self.destination)
             c.start()
             self.state.connections.add(c)
-
-    def _receive_line(self):
-        line = receive_line(self.s)
-        # logging.debug('I2PDialer <- %s', line)
-        return line
-
-    def _send(self, command):
-        # logging.debug('I2PDialer -> %s', command)
-        self.s.sendall(command)
 
     def _connect(self):
         self._send(b'HELLO VERSION MIN=3.0 MAX=3.3\n')

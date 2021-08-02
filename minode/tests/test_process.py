@@ -1,6 +1,7 @@
 import unittest
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -10,7 +11,7 @@ import psutil
 class TestProcessProto(unittest.TestCase):
     """Test process attributes, common flow"""
     _process_cmd = ['minode']
-    _connection_limit = 16
+    _connection_limit = 8 if sys.platform.startswith('win') else 16
     _listen = None
     _listening_port = None
 

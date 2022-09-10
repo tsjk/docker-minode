@@ -11,7 +11,7 @@ objects inside the network.
 
 ## Running
 ```
-git clone https://github.com/g1itch/MiNode.git
+git clone https://git.bitmessage.org/lee.miller/MiNode.git
 ```
 ```
 cd MiNode
@@ -80,7 +80,7 @@ If you add `trustedpeer = 127.0.0.1:8444` to `keys.dat` file in PyBitmessage it
 will allow you to use it anonymously over I2P with MiNode acting as a bridge.
 
 ## Contact
-- g1itch: BM-NC4h7r3HGcJgqNuwSEpGcSiVij3BKuXa
+- lee.miller: BM-2cX1pX2goWAuZB5bLqj17x23EFjufHmygv
 
 ## Links
 - [Bitmessage project website](https://bitmessage.org)

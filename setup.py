@@ -20,7 +20,7 @@ setup(
     long_description=README,
     license='MIT',
     author='Krzysztof Oziomek',
-    url='https://github.com/g1itch/MiNode',
+    url='https://git.bitmessage.org/lee.miller/MiNode',
     packages=find_packages(exclude=('*tests',)),
     package_data={'': ['*.csv', 'tls/*.pem']},
     entry_points={'console_scripts': ['minode = minode.main:main']},

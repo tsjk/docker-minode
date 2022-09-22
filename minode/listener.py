@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Listener thread creates connection objects for incoming connections"""
 import logging
 import socket
 import threading
@@ -8,6 +9,7 @@ from .connection import Connection
 
 
 class Listener(threading.Thread):
+    """The listener thread"""
     def __init__(self, host, port, family=socket.AF_INET):
         super().__init__(name='Listener')
         self.host = host

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""The logic and behaviour of a single connection"""
 import base64
 import errno
 import logging
@@ -14,6 +15,7 @@ from . import message, shared, structure
 
 
 class Connection(threading.Thread):
+    """The connection object"""
     def __init__(
         self, host, port, s=None, network='ip', server=False,
         i2p_remote_dest=b''

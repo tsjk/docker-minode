@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Protocol message objects"""
 import base64
 import hashlib
 import struct
@@ -8,6 +9,7 @@ from . import shared, structure
 
 
 class Header():
+    """Common message header"""
     def __init__(self, command, payload_length, payload_checksum):
         self.command = command
         self.payload_length = payload_length
@@ -43,6 +45,7 @@ class Header():
 
 
 class Message():
+    """Common message structure"""
     def __init__(self, command, payload):
         self.command = command
         self.payload = payload
@@ -85,6 +88,7 @@ class Message():
 
 
 class Version():
+    """The version message"""
     def __init__(
         self, host, port, protocol_version=shared.protocol_version,
         services=shared.services, nonce=shared.nonce,
@@ -155,6 +159,7 @@ class Version():
 
 
 class Inv():
+    """The inv message"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -190,6 +195,7 @@ class Inv():
 
 
 class GetData():
+    """The getdata message"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -225,6 +231,7 @@ class GetData():
 
 
 class Addr():
+    """The addr message"""
     def __init__(self, addresses):
         self.addresses = addresses
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Protocol structures"""
 import base64
 import hashlib
 import logging
@@ -10,6 +11,7 @@ from . import shared
 
 
 class VarInt():
+    """varint object"""
     def __init__(self, n):
         self.n = n
 
@@ -44,6 +46,7 @@ class VarInt():
 
 
 class Object():
+    """object message"""
     def __init__(
         self, nonce, expires_time, object_type, version,
         stream_number, object_payload
@@ -139,6 +142,7 @@ class Object():
 
 
 class NetAddrNoPrefix():
+    """Network address"""
     def __init__(self, services, host, port):
         self.services = services
         self.host = host
@@ -171,6 +175,7 @@ class NetAddrNoPrefix():
 
 
 class NetAddr():
+    """Network address with time and stream"""
     def __init__(self, services, host, port, stream=shared.stream):
         self.stream = stream
         self.services = services

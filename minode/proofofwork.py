@@ -1,3 +1,4 @@
+"""Doing proof of work"""
 import base64
 import hashlib
 import logging

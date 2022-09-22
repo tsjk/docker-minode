@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Functions for starting the program"""
 import argparse
 import base64
 import csv
@@ -16,11 +17,13 @@ from .listener import Listener
 
 
 def handler(s, f):  # pylint: disable=unused-argument
+    """Signal handler"""
     logging.info('Gracefully shutting down MiNode')
     shared.shutting_down = True
 
 
 def parse_arguments():
+    """Parsing arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', help='Port to listen on', type=int)
     parser.add_argument('--host', help='Listening host')
@@ -100,6 +103,7 @@ def parse_arguments():
 
 
 def load_data():
+    """Loads initial nodes and data, stored in files between sessions"""
     try:
         with open(
             os.path.join(shared.data_directory, 'objects.pickle'), 'br'
@@ -149,6 +153,7 @@ def load_data():
 
 
 def bootstrap_from_dns():
+    """Addes addresses of bootstrap servers to known nodes"""
     try:
         for item in socket.getaddrinfo('bootstrap8080.bitmessage.org', 80):
             shared.unchecked_node_pool.add((item[4][0], 8080))
@@ -165,6 +170,7 @@ def bootstrap_from_dns():
 
 
 def start_ip_listener():
+    """Starts `.listener.Listener`"""
     listener_ipv4 = None
     listener_ipv6 = None
 
@@ -201,6 +207,7 @@ def start_ip_listener():
 
 
 def start_i2p_listener():
+    """Starts I2P threads"""
     # Grab I2P destinations from old object file
     for obj in shared.objects.values():
         if obj.object_type == shared.i2p_dest_obj_type:
@@ -263,6 +270,7 @@ def start_i2p_listener():
 
 
 def main():
+    """Script entry point"""
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
 

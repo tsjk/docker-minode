@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""The main thread, managing connections, nodes and objects"""
 import base64
 import logging
 import os
@@ -14,6 +15,7 @@ from .i2p import I2PDialer
 
 
 class Manager(threading.Thread):
+    """The manager thread"""
     def __init__(self):
         super().__init__(name='Manager')
         self.q = queue.Queue()

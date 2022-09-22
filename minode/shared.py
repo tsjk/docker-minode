@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Common variables and structures, referred in different threads"""
 import logging
 import os
 import queue

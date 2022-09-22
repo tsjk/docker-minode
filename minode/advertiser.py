@@ -1,3 +1,6 @@
+"""
+Advertiser thread advertises new addresses and objects among all connections
+"""
 import logging
 import threading
 import time
@@ -6,6 +9,7 @@ from . import message, shared
 
 
 class Advertiser(threading.Thread):
+    """The advertiser thread"""
     def __init__(self):
         super().__init__(name='Advertiser')
 

@@ -216,6 +216,8 @@ def start_i2p_listener():
             ) as src:
                 dest_priv = src.read()
                 logging.debug('Loaded I2P destination private key.')
+        except FileNotFoundError:
+            pass
         except Exception:
             logging.info(
                 'Error while loading I2P destination private key.',

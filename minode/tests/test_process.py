@@ -11,8 +11,8 @@ import psutil
 class TestProcessProto(unittest.TestCase):
     """Test process attributes, common flow"""
     _process_cmd = ['minode']
-    _connection_limit = 8 if sys.platform.startswith('win') else 16
-    _listen = None
+    _connection_limit = 4 if sys.platform.startswith('win') else 10
+    _listen = False
     _listening_port = None
 
     home = None
@@ -25,11 +25,10 @@ class TestProcessProto(unittest.TestCase):
             '--data-dir', cls.home,
             '--connection-limit', str(cls._connection_limit)
         ]
-        if cls._listen is True:
-            if cls._listening_port:
-                cmd += ['-p', cls._listening_port]
-        elif cls._listen is False:
+        if not cls._listen:
             cmd += ['--no-incoming']
+        elif cls._listening_port:
+            cmd += ['-p', str(cls._listening_port)]
         cls.process = psutil.Popen(cmd, stderr=subprocess.STDOUT)  # nosec
 
     @classmethod
@@ -69,26 +68,38 @@ class TestProcess(TestProcessProto):
     def test_connections(self):
         """Check minode process connections"""
         _started = time.time()
-        connections = []
-        for t in range(40):
-            connections = self.process.connections()
-            if len(connections) > self._connection_limit / 2:
+
+        def connections():
+            return [
+                c for c in self.process.connections()
+                if c.status == 'ESTABLISHED']
+
+        for t in range(120):
+            if len(connections()) > self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
             time.sleep(0.5)
         else:
             self.fail(
-                'Failed establish at least %s connections in 20 sec'
+                'Failed establish at least %s connections in 60 sec'
                 % (self._connection_limit / 2))
         for t in range(_time_to_connect * 2):
             self.assertLessEqual(
-                len(connections), self._connection_limit + 1,  # one listening
+                len(connections()),
+                # shared.outgoing_connections, one listening
+                # TODO: find the cause of one extra
+                (min(self._connection_limit, 8) if not self._listen
+                 else self._connection_limit) + 1,
                 'Opened more connections than required by --connection-limit')
-            time.sleep(0.5)
-        for c in connections:
+            time.sleep(1)
+
+        for c in self.process.connections():
             if c.status == 'LISTEN':
                 if self._listen is False:
                     return self.fail(
                         'Listening while started with --no-incoming')
                 self.assertEqual(c.laddr[1], self._listening_port or 8444)
                 break
+        else:
+            if self._listen:
+                self.fail('No listening connection found')

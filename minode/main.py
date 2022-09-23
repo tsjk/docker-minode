@@ -174,6 +174,9 @@ def start_ip_listener():
                 shared.listening_host,
                 shared.listening_port, family=socket.AF_INET6)
             listener_ipv6.start()
+        except socket.gaierror as e:
+            if e.errno == -9:
+                logging.info('IPv6 is not supported.')
         except Exception:
             logging.info(
                 'Error while starting IPv6 listener on port %s',

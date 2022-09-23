@@ -65,6 +65,9 @@ class TestProcessShutdown(TestProcessProto):
 
 class TestProcess(TestProcessProto):
     """The test case for minode process"""
+    _wait_time = 120
+    _check_limit = False
+
     def test_connections(self):
         """Check minode process connections"""
         _started = time.time()
@@ -74,24 +77,30 @@ class TestProcess(TestProcessProto):
                 c for c in self.process.connections()
                 if c.status == 'ESTABLISHED']
 
-        for t in range(120):
+        def continue_check_limit(extra_time):
+            for t in range(extra_time * 2):
+                self.assertLessEqual(
+                    len(connections()),
+                    # shared.outgoing_connections, one listening
+                    # TODO: find the cause of one extra
+                    (min(self._connection_limit, 8) if not self._listen
+                     else self._connection_limit) + 1,
+                    'Opened more connections than required'
+                    ' by --connection-limit')
+                time.sleep(1)
+
+        for t in range(self._wait_time * 2):
             if len(connections()) > self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
             time.sleep(0.5)
         else:
             self.fail(
-                'Failed establish at least %s connections in 60 sec'
-                % (self._connection_limit / 2))
-        for t in range(_time_to_connect * 2):
-            self.assertLessEqual(
-                len(connections()),
-                # shared.outgoing_connections, one listening
-                # TODO: find the cause of one extra
-                (min(self._connection_limit, 8) if not self._listen
-                 else self._connection_limit) + 1,
-                'Opened more connections than required by --connection-limit')
-            time.sleep(1)
+                'Failed establish at least %s connections in %s sec'
+                % (self._connection_limit / 2, self._wait_time))
+
+        if self._check_limit:
+            continue_check_limit(_time_to_connect)
 
         for c in self.process.connections():
             if c.status == 'LISTEN':

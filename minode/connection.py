@@ -190,7 +190,10 @@ class Connection(threading.Thread):
             'Initializing TLS connection with %s:%s',
             self.host_print, self.port)
 
-        context = ssl.create_default_context()
+        context = ssl.create_default_context(
+            purpose=ssl.Purpose.CLIENT_AUTH if self.server
+            else ssl.Purpose.SERVER_AUTH
+        )
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 

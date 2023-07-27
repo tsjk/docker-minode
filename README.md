@@ -30,6 +30,7 @@ usage: main.py [-h] [-p PORT] [--host HOST] [--debug] [--data-dir DATA_DIR]
                [--connection-limit CONNECTION_LIMIT] [--i2p]
                [--i2p-tunnel-length I2P_TUNNEL_LENGTH]
                [--i2p-sam-host I2P_SAM_HOST] [--i2p-sam-port I2P_SAM_PORT]
+               [--i2p-transient]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -51,6 +52,7 @@ optional arguments:
                         Host of I2P SAMv3 bridge
   --i2p-sam-port I2P_SAM_PORT
                         Port of I2P SAMv3 bridge
+  --i2p-transient       Generate new I2P destination on start
 
 ```
 

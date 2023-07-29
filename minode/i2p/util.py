@@ -20,6 +20,11 @@ class I2PThread(threading.Thread):
     Abstract I2P thread with _receive_line() and _send() methods,
     reused in I2PDialer, I2PListener and I2PController
     """
+    def __init__(self, state, name=''):
+        super().__init__(name=name)
+        self.state = state
+        self.s = None
+
     def _receive_line(self):
         line = receive_line(self.s)
         # logging.debug('I2PListener <- %s', line)

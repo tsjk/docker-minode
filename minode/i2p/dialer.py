@@ -9,14 +9,14 @@ class I2PDialer(I2PThread):
     def __init__(
         self, state, destination, nick, sam_host='127.0.0.1', sam_port=7656
     ):
-        self.state = state
+
         self.sam_host = sam_host
         self.sam_port = sam_port
 
         self.nick = nick
         self.destination = destination
 
-        super().__init__(name='I2P Dial to {}'.format(self.destination))
+        super().__init__(state, name='I2P Dial to {}'.format(self.destination))
 
         self.s = socket.create_connection((self.sam_host, self.sam_port))
 

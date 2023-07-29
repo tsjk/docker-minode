@@ -10,9 +10,8 @@ from .util import I2PThread, pub_from_priv
 
 class I2PController(I2PThread):
     def __init__(self, state, host='127.0.0.1', port=7656, dest_priv=b''):
-        super().__init__(name='I2P Controller')
+        super().__init__(state, name='I2P Controller')
 
-        self.state = state
         self.host = host
         self.port = port
         self.nick = b'MiNode_' + base64.b16encode(os.urandom(4)).lower()

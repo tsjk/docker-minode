@@ -7,14 +7,11 @@ from .util import I2PThread
 
 class I2PListener(I2PThread):
     def __init__(self, state, nick, host='127.0.0.1', port=7656):
-        super().__init__(name='I2P Listener')
+        super().__init__(state, name='I2P Listener')
 
-        self.state = state
         self.host = host
         self.port = port
         self.nick = nick
-
-        self.s = None
 
         self.version_reply = []
 

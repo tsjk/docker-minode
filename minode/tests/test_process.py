@@ -1,3 +1,4 @@
+"""Blind tests, starting the minode process"""
 import unittest
 import signal
 import subprocess
@@ -42,7 +43,7 @@ class TestProcessProto(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Ensures that pybitmessage stopped and removes files"""
+        """Ensures that process stopped and removes files"""
         try:
             if not cls._stop_process(10):
                 try:

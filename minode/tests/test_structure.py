@@ -1,3 +1,4 @@
+"""Tests for structures"""
 import unittest
 import struct
 from binascii import unhexlify

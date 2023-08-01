@@ -1,10 +1,11 @@
+"""Tests for messages"""
 import unittest
 from binascii import unhexlify
 
 from minode import message
 
 
-magic = 0xE9BEB4D9
+MAGIC = 0xE9BEB4D9
 
 # 500 identical peers:
 # import ipaddress
@@ -26,7 +27,7 @@ class TestMessage(unittest.TestCase):
 
     def test_packet(self):
         """Check the packet created by message.Message()"""
-        head = unhexlify(b'%x' % magic)
+        head = unhexlify(b'%x' % MAGIC)
         self.assertEqual(
             message.Message(b'ping', b'').to_bytes()[:len(head)], head)
 

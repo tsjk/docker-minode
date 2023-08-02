@@ -79,7 +79,7 @@ class TestProcess(TestProcessProto):
                 if c.status == 'ESTABLISHED']
 
         def continue_check_limit(extra_time):
-            for t in range(extra_time * 2):
+            for _ in range(extra_time * 2):
                 self.assertLessEqual(
                     len(connections()),
                     # shared.outgoing_connections, one listening
@@ -90,7 +90,7 @@ class TestProcess(TestProcessProto):
                     ' by --connection-limit')
                 time.sleep(1)
 
-        for t in range(self._wait_time * 2):
+        for _ in range(self._wait_time * 2):
             if len(connections()) > self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break

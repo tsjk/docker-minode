@@ -60,6 +60,12 @@ class TestProcessProto(unittest.TestCase):
         except psutil.NoSuchProcess:
             pass
 
+    def connections(self):
+        """All process' established connections"""
+        return [
+            c for c in self.process.connections()
+            if c.status == 'ESTABLISHED']
+
 
 class TestProcessShutdown(TestProcessProto):
     """Separate test case for SIGTERM"""
@@ -80,15 +86,10 @@ class TestProcess(TestProcessProto):
         """Check minode process connections"""
         _started = time.time()
 
-        def connections():
-            return [
-                c for c in self.process.connections()
-                if c.status == 'ESTABLISHED']
-
         def continue_check_limit(extra_time):
             for _ in range(extra_time * 2):
                 self.assertLessEqual(
-                    len(connections()),
+                    len(self.connections()),
                     # shared.outgoing_connections, one listening
                     # TODO: find the cause of one extra
                     (min(self._connection_limit, 8) if not self._listen
@@ -98,7 +99,7 @@ class TestProcess(TestProcessProto):
                 time.sleep(1)
 
         for _ in range(self._wait_time * 2):
-            if len(connections()) > self._connection_limit / 2:
+            if len(self.connections()) > self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
             time.sleep(0.5)
@@ -130,3 +131,10 @@ class TestProcessI2P(TestProcess):
     _wait_time = 120
     _listen = True
     _listening_port = 8448
+
+    def test_connections(self):
+        """Ensure all connections are I2P"""
+        super().test_connections()
+        for c in self.connections():
+            self.assertEqual(c.raddr[0], '127.0.0.1')
+            self.assertEqual(c.raddr[1], 7656)

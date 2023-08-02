@@ -86,4 +86,4 @@ will allow you to use it anonymously over I2P with MiNode acting as a bridge.
 
 ## Links
 - [Bitmessage project website](https://bitmessage.org)
-- [Protocol specification](https://bitmessage.org/wiki/Protocol_specification)
+- [Protocol specification](https://pybitmessage.rtfd.io/en/v0.6/protocol.html)

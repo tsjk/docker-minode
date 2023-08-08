@@ -135,7 +135,7 @@ class Connection(threading.Thread):
                 time.time() - self.last_message_sent > 300
                 and self.status == 'fully_established'
             ):
-                self.send_queue.put(message.Message(b'pong', b''))
+                self.send_queue.put(message.Message(b'ping', b''))
             if self.status == 'disconnecting' or shared.shutting_down:
                 data = None
             if not data:

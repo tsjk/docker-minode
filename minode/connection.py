@@ -3,6 +3,7 @@
 import base64
 import errno
 import logging
+import math
 import random
 import select
 import socket
@@ -64,6 +65,7 @@ class Connection(threading.Thread):
 
         self.last_message_received = time.time()
         self.last_message_sent = time.time()
+        self.wait_until = 0
 
     def run(self):
         if self.s is None:
@@ -429,7 +431,14 @@ class Connection(threading.Thread):
     def _request_objects(self):
         if self.vectors_to_get and len(self.vectors_requested) < 100:
             self.vectors_to_get.difference_update(shared.objects.keys())
-            if self.vectors_to_get:
+            if not self.wait_until:
+                nodes_count = (
+                    len(shared.node_pool) + len(shared.unchecked_node_pool))
+                logging.debug('Nodes count is %i', nodes_count)
+                delay = math.ceil(math.log(nodes_count + 2, 20)) * 5.2
+                self.wait_until = time.time() + delay
+                logging.debug('Skip sending getdata for %.2fs', delay)
+            if self.vectors_to_get and self.wait_until < time.time():
                 logging.info(
                     'Queued %s vectors to get', len(self.vectors_to_get))
                 if len(self.vectors_to_get) > 64:

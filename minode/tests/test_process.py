@@ -138,3 +138,9 @@ class TestProcessI2P(TestProcess):
         for c in self.connections():
             self.assertEqual(c.raddr[0], '127.0.0.1')
             self.assertEqual(c.raddr[1], 7656)
+
+
+@unittest.skipUnless(i2p_port_free, 'Detected running i2pd')
+class TestProcessNoI2P(TestProcessShutdown):
+    """Test minode process shutdown with --i2p and no IP"""
+    _process_cmd = ['minode', '--i2p', '--no-ip']

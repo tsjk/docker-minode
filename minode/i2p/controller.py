@@ -17,6 +17,8 @@ class I2PController(I2PThread):
         self.nick = b'MiNode_' + base64.b16encode(os.urandom(4)).lower()
 
         while True:
+            if state.shutting_down:
+                return
             try:
                 self.s = socket.create_connection((self.host, self.port))
                 break

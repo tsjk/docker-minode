@@ -13,7 +13,7 @@ from minode.shared import magic_bytes
 #     1626611891, 1, 1, net.ipv6(ipaddress.ip_address('127.0.0.1')).packed,
 #     8444
 # ) for _ in range(1000)]
-sample_data = unhexlify(
+sample_addr_data = unhexlify(
     'fd01f4' + (
         '0000000060f420b30000000'
         '1000000000000000100000000000000000000ffff7f00000120fc'
@@ -23,6 +23,17 @@ sample_data = unhexlify(
 # protocol.CreatePacket(b'ping', b'test')
 sample_ping_msg = unhexlify(
     'e9beb4d970696e67000000000000000000000004ee26b0dd74657374')
+
+# from pybitmessage import pathmagic
+# pathmagic.setup()
+# import protocol
+# msg = protocol.assembleVersionMessage('127.0.0.1', 8444, [1, 2, 3])
+sample_version_msg = unhexlify(
+    'e9beb4d976657273696f6e00000000000000006b1b06b182000000030000000000000003'
+    '0000000064fdd3e1000000000000000100000000000000000000ffff7f00000120fc0000'
+    '00000000000300000000000000000000ffff7f00000120fc00c0b6c3eefb2adf162f5079'
+    '4269746d6573736167653a302e362e332e322f03010203'
+)
 
 
 class TestMessage(unittest.TestCase):
@@ -47,7 +58,7 @@ class TestMessage(unittest.TestCase):
 
     def test_addr(self):
         """Test addr messages"""
-        msg = message.Message(b'addr', sample_data)
+        msg = message.Message(b'addr', sample_addr_data)
         addr_packet = message.Addr.from_message(msg)
         self.assertEqual(len(addr_packet.addresses), 500)
         address = addr_packet.addresses.pop()
@@ -55,3 +66,20 @@ class TestMessage(unittest.TestCase):
         self.assertEqual(address.services, 1)
         self.assertEqual(address.port, 8444)
         self.assertEqual(address.host, '127.0.0.1')
+
+    def test_version(self):
+        """Test version message"""
+        msg = message.Message.from_bytes(sample_version_msg)
+        self.assertEqual(msg.command, b'version')
+        version_packet = message.Version.from_message(msg)
+        self.assertEqual(version_packet.host, '127.0.0.1')
+        self.assertEqual(version_packet.port, 8444)
+        self.assertEqual(version_packet.protocol_version, 3)
+        self.assertEqual(version_packet.services, 3)
+        self.assertEqual(version_packet.user_agent, b'/PyBitmessage:0.6.3.2/')
+        self.assertEqual(version_packet.streams, [1, 2, 3])
+
+        msg = version_packet.to_bytes()
+        # omit header and timestamp
+        self.assertEqual(msg[24:36], sample_version_msg[24:36])
+        self.assertEqual(msg[44:], sample_version_msg[44:])

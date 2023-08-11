@@ -335,7 +335,9 @@ class Connection(threading.Thread):
 
     def _process_message(self, m):
         if m.command == b'version':
-            version = message.Version.from_bytes(m.to_bytes())
+            version = message.Version.from_message(m)
+            if shared.stream not in version.streams:
+                raise ValueError('message not for stream %i' % shared.stream)
             logging.debug('%s:%s -> %s', self.host_print, self.port, version)
             if (
                 version.protocol_version != shared.protocol_version

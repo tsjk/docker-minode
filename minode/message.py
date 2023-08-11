@@ -96,7 +96,7 @@ class Version():
     def __init__(
         self, host, port, protocol_version=shared.protocol_version,
         services=shared.services, nonce=shared.nonce,
-        user_agent=shared.user_agent
+        user_agent=shared.user_agent, streams=None
     ):
         self.host = host
         self.port = port
@@ -105,6 +105,9 @@ class Version():
         self.services = services
         self.nonce = nonce
         self.user_agent = user_agent
+        self.streams = streams or [shared.stream]
+        if len(self.streams) > 160000:
+            self.streams = self.streams[:160000]
 
     def __repr__(self):
         return (
@@ -119,20 +122,20 @@ class Version():
         payload += struct.pack('>Q', self.services)
         payload += struct.pack('>Q', int(time.time()))
         payload += structure.NetAddrNoPrefix(
-            shared.services, self.host, self.port).to_bytes()
+            1, self.host, self.port).to_bytes()
         payload += structure.NetAddrNoPrefix(
-            shared.services, '127.0.0.1', 8444).to_bytes()
+            self.services, '127.0.0.1', 8444).to_bytes()
         payload += self.nonce
-        payload += structure.VarInt(len(shared.user_agent)).to_bytes()
-        payload += shared.user_agent
-        payload += 2 * structure.VarInt(1).to_bytes()
+        payload += structure.VarInt(len(self.user_agent)).to_bytes()
+        payload += self.user_agent
+        payload += structure.VarInt(len(self.streams)).to_bytes()
+        for stream in self.streams:
+            payload += structure.VarInt(stream).to_bytes()
 
         return Message(b'version', payload).to_bytes()
 
     @classmethod
-    def from_bytes(cls, b):
-        m = Message.from_bytes(b)
-
+    def from_message(cls, m):
         payload = m.payload
 
         (  # unused: timestamp, net_addr_local
@@ -156,10 +159,25 @@ class Version():
 
         payload = payload[user_agent_length:]
 
-        if payload != b'\x01\x01':
-            raise ValueError('message not for stream 1')
+        streams_varint_length = structure.VarInt.length(payload[0])
+        streams_count = structure.VarInt.from_bytes(
+            payload[:streams_varint_length]).n
+        payload = payload[streams_varint_length:]
+        if streams_count > 160000:
+            raise ValueError('malformed Version message, to many streams')
+        streams = []
 
-        return cls(host, port, protocol_version, services, nonce, user_agent)
+        while payload:
+            stream_length = structure.VarInt.length(payload[0])
+            streams.append(
+                structure.VarInt.from_bytes(payload[:stream_length]).n)
+            payload = payload[stream_length:]
+
+        if streams_count != len(streams):
+            raise ValueError('malformed Version message, wrong streams_count')
+
+        return cls(
+            host, port, protocol_version, services, nonce, user_agent, streams)
 
 
 class Inv():

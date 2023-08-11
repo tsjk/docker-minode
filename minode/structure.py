@@ -112,18 +112,16 @@ class Object():
                 'Invalid object %s, reason: payload is too long',
                 base64.b16encode(self.vector).decode())
             return False
-        if self.stream_number != 1:
+        if self.stream_number != shared.stream:
             logging.warning(
-                'Invalid object %s, reason: not in stream 1',
-                base64.b16encode(self.vector).decode())
+                'Invalid object %s, reason: not in stream %i',
+                base64.b16encode(self.vector).decode(), shared.stream)
             return False
-        data = self.to_bytes()[8:]
-        # length = len(data) + 8 + shared.payload_length_extra_bytes
-        # dt = max(self.expires_time - time.time(), 0)
-        h = hashlib.sha512(data).digest()
+
         pow_value = int.from_bytes(
             hashlib.sha512(hashlib.sha512(
-                self.nonce + h).digest()).digest()[:8], 'big')
+                self.nonce + self.pow_initial_hash()
+            ).digest()).digest()[:8], 'big')
         target = self.pow_target()
         if target < pow_value:
             logging.warning(

@@ -3,9 +3,8 @@ import unittest
 from binascii import unhexlify
 
 from minode import message
+from minode.shared import magic_bytes
 
-
-MAGIC = 0xE9BEB4D9
 
 # 500 identical peers:
 # import ipaddress
@@ -21,15 +20,30 @@ sample_data = unhexlify(
         ) * 500
 )
 
+# protocol.CreatePacket(b'ping', b'test')
+sample_ping_msg = unhexlify(
+    'e9beb4d970696e67000000000000000000000004ee26b0dd74657374')
+
 
 class TestMessage(unittest.TestCase):
     """Test assembling and disassembling of network mesages"""
 
     def test_packet(self):
-        """Check the packet created by message.Message()"""
-        head = unhexlify(b'%x' % MAGIC)
-        self.assertEqual(
-            message.Message(b'ping', b'').to_bytes()[:len(head)], head)
+        """Check packet creation and parsing by message.Message"""
+        msg = message.Message(b'ping', b'test').to_bytes()
+        self.assertEqual(msg[:len(magic_bytes)], magic_bytes)
+        with self.assertRaises(ValueError):
+            # wrong magic
+            message.Message.from_bytes(msg[1:])
+        with self.assertRaises(ValueError):
+            # wrong length
+            message.Message.from_bytes(msg[:-1])
+        with self.assertRaises(ValueError):
+            # wrong checksum
+            message.Message.from_bytes(msg[:-1] + b'\x00')
+        msg = message.Message.from_bytes(sample_ping_msg)
+        self.assertEqual(msg.command, b'ping')
+        self.assertEqual(msg.payload, b'test')
 
     def test_addr(self):
         """Test addr messages"""

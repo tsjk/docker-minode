@@ -9,7 +9,7 @@ from . import shared, structure
 
 
 class Header():
-    """Common message header"""
+    """Message header structure"""
     def __init__(self, command, payload_length, payload_checksum):
         self.command = command
         self.payload_length = payload_length
@@ -24,6 +24,7 @@ class Header():
             base64.b16encode(self.payload_checksum).decode())
 
     def to_bytes(self):
+        """Serialize to bytes"""
         b = b''
         b += shared.magic_bytes
         b += self.command.ljust(12, b'\x00')
@@ -33,6 +34,7 @@ class Header():
 
     @classmethod
     def from_bytes(cls, b):
+        """Parse from bytes"""
         magic_bytes, command, payload_length, payload_checksum = struct.unpack(
             '>4s12sL4s', b)
 
@@ -59,6 +61,7 @@ class Message():
             base64.b16encode(self.payload_checksum).decode())
 
     def to_bytes(self):
+        """Serialize to bytes"""
         b = Header(
             self.command, self.payload_length, self.payload_checksum
         ).to_bytes()
@@ -67,6 +70,7 @@ class Message():
 
     @classmethod
     def from_bytes(cls, b):
+        """Parse from bytes"""
         h = Header.from_bytes(b[:24])
 
         payload = b[24:]
@@ -88,7 +92,7 @@ class Message():
 
 
 class Version():
-    """The version message"""
+    """The version message payload"""
     def __init__(
         self, host, port, protocol_version=shared.protocol_version,
         services=shared.services, nonce=shared.nonce,
@@ -159,7 +163,7 @@ class Version():
 
 
 class Inv():
-    """The inv message"""
+    """The inv message payload"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -195,7 +199,7 @@ class Inv():
 
 
 class GetData():
-    """The getdata message"""
+    """The getdata message payload"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
 
@@ -231,7 +235,7 @@ class GetData():
 
 
 class Addr():
-    """The addr message"""
+    """The addr message payload"""
     def __init__(self, addresses):
         self.addresses = addresses
 

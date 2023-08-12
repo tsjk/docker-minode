@@ -46,7 +46,7 @@ class VarInt():
 
 
 class Object():
-    """object message"""
+    """The 'object' message payload"""
     def __init__(
         self, nonce, expires_time, object_type, version,
         stream_number, object_payload
@@ -66,6 +66,7 @@ class Object():
 
     @classmethod
     def from_message(cls, m):
+        """Decode message payload"""
         payload = m.payload
         nonce, expires_time, object_type = struct.unpack('>8sQL', payload[:20])
         payload = payload[20:]
@@ -80,6 +81,7 @@ class Object():
             nonce, expires_time, object_type, version, stream_number, payload)
 
     def to_bytes(self):
+        """Serialize to bytes"""
         payload = b''
         payload += self.nonce
         payload += struct.pack('>QL', self.expires_time, self.object_type)
@@ -90,9 +92,11 @@ class Object():
         return payload
 
     def is_expired(self):
+        """Check if object's TTL is expired"""
         return self.expires_time + 3 * 3600 < time.time()
 
     def is_valid(self):
+        """Checks the object validity"""
         if self.is_expired():
             logging.debug(
                 'Invalid object %s, reason: expired',
@@ -129,6 +133,7 @@ class Object():
         return True
 
     def pow_target(self):
+        """Compute PoW target"""
         data = self.to_bytes()[8:]
         length = len(data) + 8 + shared.payload_length_extra_bytes
         dt = max(self.expires_time - time.time(), 0)
@@ -138,6 +143,7 @@ class Object():
                     length + (dt * length) / (2 ** 16))))
 
     def pow_initial_hash(self):
+        """Compute the initial hash for PoW"""
         return hashlib.sha512(self.to_bytes()[8:]).digest()
 
 

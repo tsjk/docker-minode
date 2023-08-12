@@ -193,5 +193,5 @@ class Manager(threading.Thread):
             obj = structure.Object(
                 b'\x00' * 8, int(time.time() + 2 * 3600),
                 shared.i2p_dest_obj_type, shared.i2p_dest_obj_version,
-                1, dest_pub_raw)
+                shared.stream, dest_pub_raw)
             proofofwork.do_pow_and_publish(obj)

@@ -114,8 +114,8 @@ class TestProcess(TestProcessProto):
         for c in self.process.connections():
             if c.status == 'LISTEN':
                 if self._listen is False:
-                    return self.fail(
-                        'Listening while started with --no-incoming')
+                    self.fail('Listening while started with --no-incoming')
+                    return
                 self.assertEqual(c.laddr[1], self._listening_port or 8444)
                 break
         else:

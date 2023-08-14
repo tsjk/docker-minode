@@ -255,6 +255,8 @@ class Connection(threading.Thread):
             structure.NetAddr(c.remote_version.services, c.host, c.port)
             for c in shared.connections if c.network != 'i2p'
             and c.server is False and c.status == 'fully_established'}
+        # pylint: disable=unsubscriptable-object
+        # https://github.com/pylint-dev/pylint/issues/3637
         if len(shared.node_pool) > 10:
             addr.update({
                 structure.NetAddr(1, a[0], a[1])

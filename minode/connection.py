@@ -38,7 +38,7 @@ class Connection(threading.Thread):
         self.vectors_to_get = set()
         self.vectors_to_send = set()
 
-        self.vectors_requested = dict()
+        self.vectors_requested = {}
 
         self.status = 'ready'
 

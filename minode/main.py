@@ -197,7 +197,7 @@ def start_ip_listener():
                 'Error while starting IPv4 listener on port %s.'
                 ' However the IPv6 one seems to be working'
                 ' and will probably accept IPv4 connections.',  # 48 on macos
-                shared.listening_port, exc_info=(e.errno not in (48, 98)))
+                shared.listening_port, exc_info=e.errno not in (48, 98))
         else:
             logging.warning(
                 'Error while starting IPv4 listener on port %s.'

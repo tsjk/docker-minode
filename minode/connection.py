@@ -422,8 +422,12 @@ class Connection(threading.Thread):
             self.send_queue.put(message.Message(b'pong', b''))
 
         elif m.command == b'error':
+            error = message.Error.from_message(m)
             logging.warning(
-                '%s:%s -> error: %s', self.host_print, self.port, m.payload)
+                '%s:%s -> %s', self.host_print, self.port, error)
+            if error.fatal == 2:
+                # reduce probability to connect soon
+                shared.unchecked_node_pool.discard((self.host, self.port))
 
         else:
             logging.debug('%s:%s -> %s', self.host_print, self.port, m)

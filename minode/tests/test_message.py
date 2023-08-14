@@ -35,6 +35,10 @@ sample_version_msg = unhexlify(
     '4269746d6573736167653a302e362e332e322f03010203'
 )
 
+#
+sample_error_data = \
+    b'\x02\x00\x006Too many connections from your IP. Closing connection.'
+
 
 class TestMessage(unittest.TestCase):
     """Test assembling and disassembling of network mesages"""
@@ -83,3 +87,15 @@ class TestMessage(unittest.TestCase):
         # omit header and timestamp
         self.assertEqual(msg[24:36], sample_version_msg[24:36])
         self.assertEqual(msg[44:], sample_version_msg[44:])
+
+    def test_error(self):
+        """Test error message"""
+        msg = message.Error.from_message(
+            message.Message(b'error', sample_error_data))
+        self.assertEqual(msg.fatal, 2)
+        self.assertEqual(msg.ban_time, 0)
+        self.assertEqual(msg.vector, b'')
+
+        msg = message.Error(
+            b'Too many connections from your IP. Closing connection.', 2)
+        self.assertEqual(msg.to_bytes()[24:], sample_error_data)

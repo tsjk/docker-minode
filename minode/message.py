@@ -268,3 +268,37 @@ class Addr():
             payload = payload[38:]
 
         return cls(addresses)
+
+
+class Error():
+    """The error message payload"""
+    def __init__(self, error_text=b'', fatal=0, ban_time=0, vector=b''):
+        self.error_text = error_text
+        self.fatal = fatal
+        self.ban_time = ban_time
+        self.vector = vector
+
+    def __repr__(self):
+        return 'error, text: {}'.format(self.error_text)
+
+    def to_bytes(self):
+        return Message(
+            b'error', structure.VarInt(self.fatal).to_bytes()
+            + structure.VarInt(self.ban_time).to_bytes()
+            + structure.VarInt(len(self.vector)).to_bytes() + self.vector
+            + structure.VarInt(len(self.error_text)).to_bytes()
+            + self.error_text
+        ).to_bytes()
+
+    @classmethod
+    def from_message(cls, m):
+        payload = m.payload
+        fatal, payload = _payload_read_int(payload)
+        ban_time, payload = _payload_read_int(payload)
+        vector_length, payload = _payload_read_int(payload)
+        vector = payload[:vector_length]
+        payload = payload[vector_length:]
+        error_text_length, payload = _payload_read_int(payload)
+        error_text = payload[:error_text_length]
+
+        return cls(error_text, fatal, ban_time, vector)

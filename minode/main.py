@@ -300,18 +300,6 @@ def main():
         # so we can collect I2P destination objects
         start_i2p_listener()
 
-    for vector in set(shared.objects):
-        if not shared.objects[vector].is_valid():
-            if shared.objects[vector].is_expired():
-                logging.debug(
-                    'Deleted expired object: %s',
-                    base64.b16encode(vector).decode())
-            else:
-                logging.warning(
-                    'Deleted invalid object: %s',
-                    base64.b16encode(vector).decode())
-            del shared.objects[vector]
-
     manager = Manager()
     manager.start()
 

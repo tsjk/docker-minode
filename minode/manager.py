@@ -28,6 +28,7 @@ class Manager(threading.Thread):
             time.time() - 50 * 60 + random.uniform(-1, 1) * 300  # nosec
 
     def run(self):
+        self.clean_objects()
         while True:
             time.sleep(0.8)
             now = time.time()
@@ -53,12 +54,17 @@ class Manager(threading.Thread):
     @staticmethod
     def clean_objects():
         for vector in set(shared.objects):
-            if shared.objects[vector].is_expired():
+            if not shared.objects[vector].is_valid():
+                if shared.objects[vector].is_expired():
+                    logging.debug(
+                        'Deleted expired object: %s',
+                        base64.b16encode(vector).decode())
+                else:
+                    logging.warning(
+                        'Deleted invalid object: %s',
+                        base64.b16encode(vector).decode())
                 with shared.objects_lock:
                     del shared.objects[vector]
-                logging.debug(
-                    'Deleted expired object: %s',
-                    base64.b16encode(vector).decode())
 
     @staticmethod
     def manage_connections():

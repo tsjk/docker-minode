@@ -110,11 +110,7 @@ class Connection(threading.Thread):
                         'Disconnecting from %s:%s. Reason: %s',
                         self.host_print, self.port, e)
                     data = None
-            except ConnectionResetError:
-                logging.debug(
-                    'Disconnecting from %s:%s. Reason: ConnectionResetError',
-                    self.host_print, self.port)
-                self.status = 'disconnecting'
+
             self._process_buffer_receive()
             self._process_queue()
             self._send_data()

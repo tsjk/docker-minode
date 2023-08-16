@@ -145,7 +145,7 @@ class Connection(threading.Thread):
             if not data:
                 self.status = 'disconnected'
                 self.s.close()
-                logging.debug(
+                logging.info(
                     'Disconnected from %s:%s', self.host_print, self.port)
                 break
             time.sleep(0.2)

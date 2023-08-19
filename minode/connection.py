@@ -411,7 +411,8 @@ class ConnectionBase(threading.Thread):
         addr = message.Addr.from_message(m)
         logging.debug('%s:%s -> %s', self.host_print, self.port, addr)
         for a in addr.addresses:
-            shared.unchecked_node_pool.add((a.host, a.port))
+            if (a.host, a.port) not in shared.core_nodes:
+                shared.unchecked_node_pool.add((a.host, a.port))
 
     def _request_objects(self):
         if self.vectors_to_get and len(self.vectors_requested) < 100:

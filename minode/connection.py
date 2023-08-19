@@ -507,4 +507,13 @@ class Connection(ConnectionBase):
         self.vectors_to_send.update(getdata.vectors)
 
 
+class Bootstrapper(ConnectionBase):
+    """A special type of connection to find IP nodes"""
+    def _process_msg_addr(self, m):
+        super()._process_msg_addr(m)
+        shared.node_pool.discard((self.host, self.port))
+        self.status = 'disconnecting'
+        self.send_queue.put(None)
+
+
 shared.connection = Connection

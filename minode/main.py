@@ -101,18 +101,22 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
 
 def bootstrap_from_dns():
-    """Addes addresses of bootstrap servers to known nodes"""
+    """Addes addresses of bootstrap servers to core nodes"""
     try:
-        for item in socket.getaddrinfo('bootstrap8080.bitmessage.org', 80):
-            shared.unchecked_node_pool.add((item[4][0], 8080))
-            logging.debug(
-                'Adding %s to unchecked_node_pool'
-                ' based on DNS bootstrap method', item[4][0])
-        for item in socket.getaddrinfo('bootstrap8444.bitmessage.org', 80):
-            shared.unchecked_node_pool.add((item[4][0], 8444))
-            logging.debug(
-                'Adding %s to unchecked_node_pool'
-                ' based on DNS bootstrap method', item[4][0])
+        for port in (8080, 8444):
+            for item in socket.getaddrinfo(
+                'bootstrap{}.bitmessage.org'.format(port), 80,
+                proto=socket.IPPROTO_TCP
+            ):
+                try:
+                    addr = item[4][0]
+                    socket.inet_pton(item[0], addr)
+                except (TypeError, socket.error):
+                    continue
+                else:
+                    shared.core_nodes.add((addr, port))
+    except socket.gaierror:
+        logging.info('Failed to do a DNS query')
     except Exception:
         logging.info('Error during DNS bootstrap', exc_info=True)
 

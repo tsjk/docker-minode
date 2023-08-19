@@ -29,11 +29,15 @@ class Manager(threading.Thread):
         self.last_published_i2p_destination = \
             time.time() - 50 * 60 + random.uniform(-1, 1) * 300  # nosec B311
 
+    def fill_bootstrap_pool(self):
+        """Populate the bootstrap pool by core nodes and checked ones"""
+        self.bootstrap_pool = list(shared.core_nodes.union(shared.node_pool))
+        random.shuffle(self.bootstrap_pool)
+
     def run(self):
         self.load_data()
         self.clean_objects()
-        self.bootstrap_pool = list(shared.core_nodes.union(shared.node_pool))
-        random.shuffle(self.bootstrap_pool)
+        self.fill_bootstrap_pool()
         while True:
             time.sleep(0.8)
             now = time.time()
@@ -87,7 +91,13 @@ class Manager(threading.Thread):
 
         def bootstrap():
             """Bootstrap from DNS seed-nodes and known nodes"""
-            target = self.bootstrap_pool.pop()
+            try:
+                target = self.bootstrap_pool.pop()
+            except IndexError:
+                logging.warning(
+                    'Ran out of bootstrap nodes, refilling')
+                self.fill_bootstrap_pool()
+                return
             logging.info('Starting a bootstrapper for %s:%s', *target)
             connect(target, Bootstrapper)
 
@@ -116,20 +126,19 @@ class Manager(threading.Thread):
         ):
 
             if shared.ip_enabled:
-                if shared.unchecked_node_pool:
-                    if len(shared.unchecked_node_pool) > 16:
-                        to_connect.update(random.sample(
-                            tuple(shared.unchecked_node_pool), 16))
-                    else:
-                        to_connect.update(shared.unchecked_node_pool)
-                    shared.unchecked_node_pool.difference_update(to_connect)
-                    if len(shared.node_pool) > 8:
-                        to_connect.update(random.sample(
-                            tuple(shared.node_pool), 8))
-                    else:
-                        to_connect.update(shared.node_pool)
+                if len(shared.unchecked_node_pool) > 16:
+                    to_connect.update(random.sample(
+                        tuple(shared.unchecked_node_pool), 16))
                 else:
-                    bootstrap()
+                    to_connect.update(shared.unchecked_node_pool)
+                    if outgoing_connections < shared.outgoing_connections / 2:
+                        bootstrap()
+                shared.unchecked_node_pool.difference_update(to_connect)
+                if len(shared.node_pool) > 8:
+                    to_connect.update(random.sample(
+                        tuple(shared.node_pool), 8))
+                else:
+                    to_connect.update(shared.node_pool)
 
             if shared.i2p_enabled:
                 if len(shared.i2p_unchecked_node_pool) > 16:

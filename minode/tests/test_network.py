@@ -73,10 +73,32 @@ class TestNetwork(unittest.TestCase):
 
     def _make_initial_nodes(self):
         Manager.load_data()
-        self.assertGreaterEqual(len(shared.core_nodes), 3)
+        core_nodes_len = len(shared.core_nodes)
+        self.assertGreaterEqual(core_nodes_len, 3)
 
         main.bootstrap_from_dns()
-        self.assertGreaterEqual(len(shared.unchecked_node_pool), 3)
+        self.assertGreaterEqual(len(shared.core_nodes), core_nodes_len)
+
+    def test_bootstrap(self):
+        """Start bootstrappers and check node pool"""
+        if shared.core_nodes:
+            shared.core_nodes = set()
+        if shared.unchecked_node_pool:
+            shared.unchecked_node_pool = set()
+
+        self._make_initial_nodes()
+        self.assertEqual(len(shared.unchecked_node_pool), 0)
+
+        for node in shared.core_nodes:
+            c = connection.Bootstrapper(*node)
+            c.start()
+            c.join()
+            if len(shared.unchecked_node_pool) > 2:
+                break
+        else:
+            self.fail(
+                'Failed to find at least 3 nodes'
+                ' after running %s bootstrappers' % len(shared.core_nodes))
 
     def test_connection(self):
         """Check a normal connection - should receive objects"""

@@ -1,7 +1,10 @@
 """Tests for structures"""
-import unittest
+import base64
+import logging
+import queue
 import struct
 import time
+import unittest
 from binascii import unhexlify
 
 from minode import message, proofofwork, shared, structure
@@ -20,9 +23,17 @@ sample_addr_data = unhexlify(
 sample_object_data = unhexlify(
     '000000000000000000000000652724030000002a010248454c4c4f')
 
+logging.basicConfig(
+    level=shared.log_level,
+    format='[%(asctime)s] [%(levelname)s] %(message)s')
+
 
 class TestStructure(unittest.TestCase):
     """Testing structures serializing and deserializing"""
+
+    @classmethod
+    def setUpClass(cls):
+        shared.objects = {}
 
     def test_varint(self):
         """Test varint serializing and deserializing"""
@@ -122,3 +133,41 @@ class TestStructure(unittest.TestCase):
         obj.object_payload = \
             b'TIGER, tiger, burning bright. In the forests of the night'
         self.assertFalse(obj.is_valid())
+
+    def test_proofofwork(self):
+        """Check the main proofofwork call and worker"""
+        shared.vector_advertise_queue = queue.Queue()
+        obj = structure.Object(
+            b'\x00' * 8, int(time.time() + 300), 42, 1,
+            shared.stream, b'HELLO')
+        start_time = time.time()
+        proofofwork.do_pow_and_publish(obj)
+        try:
+            vector = shared.vector_advertise_queue.get(timeout=300)
+        except queue.Empty:
+            self.fail("Couldn't make work in 300 sec")
+        else:
+            time.sleep(1)
+            try:
+                result = shared.objects[vector]
+            except KeyError:
+                self.fail(
+                    "Couldn't found object with vector %s"
+                    " %s sec after pow start" % (
+                        base64.b16encode(vector), time.time() - start_time))
+            self.assertTrue(result.is_valid())
+            self.assertEqual(result.object_type, 42)
+            self.assertEqual(result.object_payload, b'HELLO')
+
+        q = queue.Queue()
+        # pylint: disable=protected-access
+        proofofwork._pow_worker(obj.pow_target(), obj.pow_initial_hash(), q)
+        try:
+            nonce = q.get(timeout=5)
+        except queue.Empty:
+            self.fail("No nonce found in the queue")
+
+        obj = structure.Object(
+            nonce, obj.expires_time, obj.object_type, obj.version,
+            obj.stream_number, obj.object_payload)
+        self.assertTrue(obj.is_valid())

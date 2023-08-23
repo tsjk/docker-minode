@@ -77,7 +77,7 @@ class Manager(threading.Thread):
                 with shared.connections_lock:
                     shared.connections.remove(c)
             else:
-                hosts.add(c.host)
+                hosts.add(structure.NetAddrNoPrefix.network_group(c.host))
                 if not c.server:
                     outgoing_connections += 1
 
@@ -121,15 +121,16 @@ class Manager(threading.Thread):
                 else:
                     to_connect.update(shared.i2p_node_pool)
 
-        for addr in to_connect:
-            if addr[0] in hosts:
+        for host, port in to_connect:
+            group = structure.NetAddrNoPrefix.network_group(host)
+            if group in hosts:
                 continue
-            if addr[1] == 'i2p' and shared.i2p_enabled:
-                if shared.i2p_session_nick and addr[0] != shared.i2p_dest_pub:
+            if port == 'i2p' and shared.i2p_enabled:
+                if shared.i2p_session_nick and host != shared.i2p_dest_pub:
                     try:
                         d = I2PDialer(
                             shared,
-                            addr[0], shared.i2p_session_nick,
+                            host, shared.i2p_session_nick,
                             shared.i2p_sam_host, shared.i2p_sam_port)
                         d.start()
                         hosts.add(d.destination)
@@ -141,9 +142,9 @@ class Manager(threading.Thread):
                 else:
                     continue
             else:
-                c = Connection(addr[0], addr[1])
+                c = Connection(host, port)
                 c.start()
-                hosts.add(c.host)
+                hosts.add(group)
                 with shared.connections_lock:
                     shared.connections.add(c)
         shared.hosts = hosts

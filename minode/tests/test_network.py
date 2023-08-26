@@ -5,6 +5,7 @@ import random
 import unittest
 import tempfile
 import time
+from contextlib import contextmanager
 
 from minode import connection, main, shared
 from minode.manager import Manager
@@ -13,6 +14,21 @@ from minode.manager import Manager
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] %(message)s')
+
+
+@contextmanager
+def time_offset(offset):
+    """
+    Replace time.time() by a mock returning a constant value
+    with given offset from current time.
+    """
+    started = time.time()
+    time_call = time.time
+    try:
+        time.time = lambda: started + offset
+        yield time_call
+    finally:
+        time.time = time_call
 
 
 class TestNetwork(unittest.TestCase):
@@ -31,13 +47,16 @@ class TestNetwork(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_connection(self):
-        """Check a normal connection - should receive objects"""
+    def _make_initial_nodes(self):
         Manager.load_data()
         self.assertGreaterEqual(len(shared.core_nodes), 3)
 
         main.bootstrap_from_dns()
         self.assertGreaterEqual(len(shared.unchecked_node_pool), 3)
+
+    def test_connection(self):
+        """Check a normal connection - should receive objects"""
+        self._make_initial_nodes()
 
         started = time.time()
         nodes = list(shared.core_nodes.union(shared.unchecked_node_pool))
@@ -67,3 +86,33 @@ class TestNetwork(unittest.TestCase):
                 break
         else:
             self.fail('Failed to establish a proper connection')
+
+    def test_time_offset(self):
+        """Assert the network bans for large time offset"""
+        def try_connect(nodes, timeout, call):
+            started = call()
+            for node in nodes:
+                c = connection.Connection(*node)
+                c.start()
+                while call() < started + timeout:
+                    if c.status == 'fully_established':
+                        return 'Established a connection'
+                    if c.status in ('disconnected', 'failed'):
+                        break
+                    time.sleep(0.2)
+                else:
+                    return 'Spent too much time trying to connect'
+
+        def time_offset_connections(nodes, offset):
+            """Spoof time.time and open connections with given time offset"""
+            with time_offset(offset) as time_call:
+                result = try_connect(nodes, 200, time_call)
+                if result:
+                    self.fail(result)
+
+        self._make_initial_nodes()
+        nodes = random.sample(
+            tuple(shared.core_nodes.union(shared.unchecked_node_pool)), 5)
+
+        time_offset_connections(nodes, 4000)
+        time_offset_connections(nodes, -4000)

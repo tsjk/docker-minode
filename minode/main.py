@@ -2,11 +2,9 @@
 """Functions for starting the program"""
 import argparse
 import base64
-import csv
 import logging
 import multiprocessing
 import os
-import pickle
 import signal
 import socket
 
@@ -100,56 +98,6 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         shared.i2p_sam_port = args.i2p_sam_port
     if args.i2p_transient:
         shared.i2p_transient = True
-
-
-def load_data():
-    """Loads initial nodes and data, stored in files between sessions"""
-    try:
-        with open(
-            os.path.join(shared.data_directory, 'objects.pickle'), 'br'
-        ) as src:
-            shared.objects = pickle.load(src)
-    except FileNotFoundError:
-        pass  # first start
-    except Exception:
-        logging.warning(
-            'Error while loading objects from disk.', exc_info=True)
-
-    try:
-        with open(
-            os.path.join(shared.data_directory, 'nodes.pickle'), 'br'
-        ) as src:
-            shared.node_pool = pickle.load(src)
-    except FileNotFoundError:
-        pass
-    except Exception:
-        logging.warning('Error while loading nodes from disk.', exc_info=True)
-
-    try:
-        with open(
-            os.path.join(shared.data_directory, 'i2p_nodes.pickle'), 'br'
-        ) as src:
-            shared.i2p_node_pool = pickle.load(src)
-    except FileNotFoundError:
-        pass
-    except Exception:
-        logging.warning('Error while loading nodes from disk.', exc_info=True)
-
-    with open(
-        os.path.join(shared.source_directory, 'core_nodes.csv'),
-        'r', newline=''
-    ) as src:
-        reader = csv.reader(src)
-        shared.core_nodes = {tuple(row) for row in reader}
-        shared.node_pool.update(shared.core_nodes)
-
-    with open(
-        os.path.join(shared.source_directory, 'i2p_core_nodes.csv'),
-        'r', newline=''
-    ) as f:
-        reader = csv.reader(f)
-        shared.i2p_core_nodes = {(row[0].encode(), 'i2p') for row in reader}
-        shared.i2p_node_pool.update(shared.i2p_core_nodes)
 
 
 def bootstrap_from_dns():
@@ -289,8 +237,6 @@ def main():
             logging.warning(
                 'Error while creating data directory in: %s',
                 shared.data_directory, exc_info=True)
-
-    load_data()
 
     if shared.ip_enabled and not shared.trusted_peer:
         bootstrap_from_dns()

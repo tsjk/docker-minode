@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """The main thread, managing connections, nodes and objects"""
 import base64
+import csv
 import logging
 import os
 import pickle
@@ -28,6 +29,7 @@ class Manager(threading.Thread):
             time.time() - 50 * 60 + random.uniform(-1, 1) * 300  # nosec
 
     def run(self):
+        self.load_data()
         self.clean_objects()
         while True:
             time.sleep(0.8)
@@ -143,6 +145,59 @@ class Manager(threading.Thread):
                 with shared.connections_lock:
                     shared.connections.add(c)
         shared.hosts = hosts
+
+    @staticmethod
+    def load_data():
+        """Loads initial nodes and data, stored in files between sessions"""
+        try:
+            with open(
+                os.path.join(shared.data_directory, 'objects.pickle'), 'br'
+            ) as src:
+                shared.objects = pickle.load(src)
+        except FileNotFoundError:
+            pass  # first start
+        except Exception:
+            logging.warning(
+                'Error while loading objects from disk.', exc_info=True)
+
+        try:
+            with open(
+                os.path.join(shared.data_directory, 'nodes.pickle'), 'br'
+            ) as src:
+                shared.node_pool = pickle.load(src)
+        except FileNotFoundError:
+            pass
+        except Exception:
+            logging.warning(
+                'Error while loading nodes from disk.', exc_info=True)
+
+        try:
+            with open(
+                os.path.join(shared.data_directory, 'i2p_nodes.pickle'), 'br'
+            ) as src:
+                shared.i2p_node_pool = pickle.load(src)
+        except FileNotFoundError:
+            pass
+        except Exception:
+            logging.warning(
+                'Error while loading nodes from disk.', exc_info=True)
+
+        with open(
+            os.path.join(shared.source_directory, 'core_nodes.csv'),
+            'r', newline='', encoding='ascii'
+        ) as src:
+            reader = csv.reader(src)
+            shared.core_nodes = {tuple(row) for row in reader}
+            shared.node_pool.update(shared.core_nodes)
+
+        with open(
+            os.path.join(shared.source_directory, 'i2p_core_nodes.csv'),
+            'r', newline='', encoding='ascii'
+        ) as f:
+            reader = csv.reader(f)
+            shared.i2p_core_nodes = {
+                (row[0].encode(), 'i2p') for row in reader}
+            shared.i2p_node_pool.update(shared.i2p_core_nodes)
 
     @staticmethod
     def pickle_objects():

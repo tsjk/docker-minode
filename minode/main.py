@@ -22,7 +22,7 @@ def handler(s, f):  # pylint: disable=unused-argument
     shared.shutting_down = True
 
 
-def parse_arguments():
+def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     """Parsing arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', help='Port to listen on', type=int)

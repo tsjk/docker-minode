@@ -9,6 +9,8 @@ import time
 
 import psutil
 
+from minode.structure import NetAddrNoPrefix
+
 try:
     socket.socket().bind(('127.0.0.1', 7656))
     i2p_port_free = True
@@ -105,6 +107,12 @@ class TestProcess(TestProcessProto):
             if len(self.connections()) > self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
+            if '--i2p' not in self._process_cmd:
+                groups = []
+                for c in self.connections():
+                    group = NetAddrNoPrefix.network_group(c.raddr[0])
+                    self.assertNotIn(group, groups)
+                    groups.append(group)
             time.sleep(0.5)
         else:
             self.fail(

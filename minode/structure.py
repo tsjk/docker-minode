@@ -60,6 +60,12 @@ class Object():
         self.vector = hashlib.sha512(hashlib.sha512(
             self.to_bytes()).digest()).digest()[:32]
 
+        self.tag = (
+            # broadcast from version 5 and pubkey/getpukey from version 4
+            self.object_payload[:32] if object_type == 3 and version == 5
+            or (object_type in (0, 1) and version == 4)
+            else None)
+
     def __repr__(self):
         return 'object, vector: {}'.format(
             base64.b16encode(self.vector).decode())

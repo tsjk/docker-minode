@@ -202,3 +202,16 @@ class TestListener(TestProcessProto):
             server.status = 'disconnecting'
 
         self.assertFalse(listener.is_alive())
+
+    def test_listener_timeoffset(self):
+        """Run listener with a large time offset - shouldn't connect"""
+        with time_offset(4000):
+            with run_listener() as listener:
+                if not listener:
+                    self.fail('Failed to start listener')
+                shared.connection_limit = 2
+                for _ in range(30):
+                    for c in shared.connections:
+                        if c.status == 'fully_established':
+                            self.fail('Established a connection')
+                    time.sleep(0.5)

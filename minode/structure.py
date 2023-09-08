@@ -6,11 +6,24 @@ import logging
 import socket
 import struct
 import time
+from abc import ABC, abstractmethod
 
 from . import shared
 
 
-class VarInt():
+class IStructure(ABC):
+    """A base for typical structure"""
+    @abstractmethod
+    def to_bytes(self):
+        """Serialize to bytes"""
+
+    @classmethod
+    @abstractmethod
+    def from_bytes(cls, b):
+        """Parse from bytes"""
+
+
+class VarInt(IStructure):
     """varint object"""
     def __init__(self, n):
         self.n = n
@@ -29,6 +42,7 @@ class VarInt():
 
     @staticmethod
     def length(b):
+        """Get the varint length"""
         if b == 0xfd:
             return 3
         if b == 0xfe:
@@ -87,7 +101,7 @@ class Object():
             nonce, expires_time, object_type, version, stream_number, payload)
 
     def to_bytes(self):
-        """Serialize to bytes"""
+        """Serialize to bytes object payload"""
         payload = b''
         payload += self.nonce
         payload += struct.pack('>QL', self.expires_time, self.object_type)
@@ -151,7 +165,7 @@ class Object():
         return hashlib.sha512(self.to_bytes()[8:]).digest()
 
 
-class NetAddrNoPrefix():
+class NetAddrNoPrefix(IStructure):
     """Network address"""
     def __init__(self, services, host, port):
         self.services = services
@@ -199,7 +213,7 @@ class NetAddrNoPrefix():
         return cls(services, host, port)
 
 
-class NetAddr():
+class NetAddr(IStructure):
     """Network address with time and stream"""
     def __init__(self, services, host, port, stream=shared.stream):
         self.stream = stream

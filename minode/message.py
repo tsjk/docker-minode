@@ -4,11 +4,28 @@ import base64
 import hashlib
 import struct
 import time
+from abc import ABC, abstractmethod
 
 from . import shared, structure
 
 
-class Header():
+class IMessage(ABC):
+    """A base for typical message"""
+    @abstractmethod
+    def __repr__(self):
+        """Make a printable form"""
+
+    @abstractmethod
+    def to_bytes(self):
+        """Serialize to bytes the full message"""
+
+    @classmethod
+    @abstractmethod
+    def from_message(cls, m):
+        """Parse from message"""
+
+
+class Header(structure.IStructure):
     """Message header structure"""
     def __init__(self, command, payload_length, payload_checksum):
         self.command = command
@@ -24,7 +41,6 @@ class Header():
             base64.b16encode(self.payload_checksum).decode())
 
     def to_bytes(self):
-        """Serialize to bytes"""
         b = b''
         b += shared.magic_bytes
         b += self.command.ljust(12, b'\x00')
@@ -34,7 +50,6 @@ class Header():
 
     @classmethod
     def from_bytes(cls, b):
-        """Parse from bytes"""
         magic_bytes, command, payload_length, payload_checksum = struct.unpack(
             '>4s12sL4s', b)
 
@@ -46,7 +61,7 @@ class Header():
         return cls(command, payload_length, payload_checksum)
 
 
-class Message():
+class Message(structure.IStructure):
     """Common message structure"""
     def __init__(self, command, payload):
         self.command = command
@@ -61,7 +76,6 @@ class Message():
             base64.b16encode(self.payload_checksum).decode())
 
     def to_bytes(self):
-        """Serialize to bytes"""
         b = Header(
             self.command, self.payload_length, self.payload_checksum
         ).to_bytes()
@@ -70,7 +84,6 @@ class Message():
 
     @classmethod
     def from_bytes(cls, b):
-        """Parse from bytes"""
         h = Header.from_bytes(b[:24])
 
         payload = b[24:]
@@ -98,7 +111,7 @@ def _payload_read_int(data):
         data[varint_length:])
 
 
-class Version():
+class Version(IMessage):
     """The version message payload"""
     def __init__(
         self, host, port, protocol_version=shared.protocol_version,
@@ -179,7 +192,7 @@ class Version():
             host, port, protocol_version, services, nonce, user_agent, streams)
 
 
-class Inv():
+class Inv(IMessage):
     """The inv message payload"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
@@ -211,7 +224,7 @@ class Inv():
         return cls(vectors)
 
 
-class GetData():
+class GetData(IMessage):
     """The getdata message payload"""
     def __init__(self, vectors):
         self.vectors = set(vectors)
@@ -243,7 +256,7 @@ class GetData():
         return cls(vectors)
 
 
-class Addr():
+class Addr(IMessage):
     """The addr message payload"""
     def __init__(self, addresses):
         self.addresses = addresses
@@ -273,7 +286,7 @@ class Addr():
         return cls(addresses)
 
 
-class Error():
+class Error(IMessage):
     """The error message payload"""
     def __init__(self, error_text=b'', fatal=0, ban_time=0, vector=b''):
         self.error_text = error_text

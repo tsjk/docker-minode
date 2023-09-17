@@ -207,6 +207,13 @@ class Connection(threading.Thread):
         context.options = (
             ssl.OP_ALL | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
             | ssl.OP_SINGLE_ECDH_USE | ssl.OP_CIPHER_SERVER_PREFERENCE)
+        # OP_NO_SSL* is deprecated since 3.6
+        try:
+            # TODO: ssl.TLSVersion.TLSv1 is deprecated
+            context.minimum_version = ssl.TLSVersion.TLSv1
+            context.maximum_version = ssl.TLSVersion.TLSv1_2
+        except AttributeError:
+            pass
 
         self.s = context.wrap_socket(
             self.s, server_side=self.server, do_handshake_on_connect=False)
@@ -227,8 +234,8 @@ class Connection(threading.Thread):
                 break
         self.tls = True
         logging.debug(
-            'Established TLS connection with %s:%s',
-            self.host_print, self.port)
+            'Established TLS connection with %s:%s (%s)',
+            self.host_print, self.port, self.s.version())
 
     def _send_message(self, m):
         if isinstance(m, message.Message) and m.command == b'object':

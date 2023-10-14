@@ -104,6 +104,27 @@ class TestStructure(unittest.TestCase):
         addr = structure.NetAddr(1, '2607:5300:201:3000::57ae', 8080, 1)
         self.assertEqual(addr.to_bytes()[8:], sample_addr_data[8:])
 
+    def test_network_group(self):
+        """Test various types of network groups"""
+        test_ip = '1.2.3.4'
+        self.assertEqual(
+            b'\x01\x02', structure.NetAddrNoPrefix.network_group(test_ip))
+        self.assertEqual(
+            structure.NetAddrNoPrefix.network_group('8.8.8.8'),
+            structure.NetAddrNoPrefix.network_group('8.8.4.4'))
+        self.assertNotEqual(
+            structure.NetAddrNoPrefix.network_group('1.1.1.1'),
+            structure.NetAddrNoPrefix.network_group('8.8.8.8'))
+        test_ip = '0102:0304:0506:0708:090A:0B0C:0D0E:0F10'
+        self.assertEqual(
+            b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C',
+            structure.NetAddrNoPrefix.network_group(test_ip))
+        for test_ip in (
+            'bootstrap8444.bitmessage.org', 'quzwelsuziwqgpt2.onion', None
+        ):
+            self.assertEqual(
+                test_ip, structure.NetAddrNoPrefix.network_group(test_ip))
+
     def test_object(self):
         """Create and check objects"""
         obj = structure.Object.from_message(

@@ -231,7 +231,10 @@ class Connection(threading.Thread):
                     'Disconnecting from %s:%s. Reason: %s',
                     self.host_print, self.port, e)
                 self.status = 'disconnecting'
-                break
+                if isinstance(e, ssl.SSLError):  # pylint: disable=no-member
+                    logging.debug('ssl.SSLError reason: %s', e.reason)
+                    shared.node_pool.discard((self.host, self.port))
+                return
         self.tls = True
         logging.debug(
             'Established TLS connection with %s:%s (%s)',

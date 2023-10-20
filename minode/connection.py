@@ -266,11 +266,11 @@ class Connection(threading.Thread):
         if len(shared.node_pool) > 10:
             addr.update({
                 structure.NetAddr(1, a[0], a[1])
-                for a in random.sample(shared.node_pool, 10)})
+                for a in random.sample(tuple(shared.node_pool), 10)})
         if len(shared.unchecked_node_pool) > 10:
             addr.update({
                 structure.NetAddr(1, a[0], a[1])
-                for a in random.sample(shared.unchecked_node_pool, 10)})
+                for a in random.sample(tuple(shared.unchecked_node_pool), 10)})
         if len(addr) != 0:
             self.send_queue.put(message.Addr(addr))
 
@@ -284,7 +284,7 @@ class Connection(threading.Thread):
                         # We limit size of inv messaged to 10000 entries
                         # because they might time out
                         # in very slow networks (I2P)
-                        pack = random.sample(to_send, 10000)
+                        pack = random.sample(tuple(to_send), 10000)
                         self.send_queue.put(message.Inv(pack))
                         to_send.difference_update(pack)
                     else:
@@ -456,7 +456,7 @@ class Connection(threading.Thread):
                 logging.info(
                     'Queued %s vectors to get', len(self.vectors_to_get))
                 if len(self.vectors_to_get) > 64:
-                    pack = random.sample(self.vectors_to_get, 64)
+                    pack = random.sample(tuple(self.vectors_to_get), 64)
                     self.send_queue.put(message.GetData(pack))
                     self.vectors_requested.update({
                         vector: time.time() for vector in pack
@@ -486,7 +486,7 @@ class Connection(threading.Thread):
             logging.info(
                 'Preparing to send %s objects', len(self.vectors_to_send))
             if len(self.vectors_to_send) > 16:
-                to_send = random.sample(self.vectors_to_send, 16)
+                to_send = random.sample(tuple(self.vectors_to_send), 16)
                 self.vectors_to_send.difference_update(to_send)
             else:
                 to_send = self.vectors_to_send.copy()

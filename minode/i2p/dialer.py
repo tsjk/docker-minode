@@ -37,7 +37,7 @@ class I2PDialer(I2PThread):
         self._send(b'HELLO VERSION MIN=3.0 MAX=3.3\n')
         self.version_reply = self._receive_line().split()
         if b'RESULT=OK' not in self.version_reply:
-            logging.warning('Error while connecting to %s', self.destination)
+            logging.debug('Error while connecting to %s', self.destination)
             self.success = False
 
         self._send(
@@ -45,6 +45,5 @@ class I2PDialer(I2PThread):
             + self.destination + b'\n')
         reply = self._receive_line().split(b' ')
         if b'RESULT=OK' not in reply:
-            logging.warning(
-                'Error while connecting to %s', self.destination)
+            logging.debug('Error while connecting to %s', self.destination)
             self.success = False

@@ -69,12 +69,15 @@ class TestProcessProto(unittest.TestCase):
 
 class TestProcessShutdown(TestProcessProto):
     """Separate test case for SIGTERM"""
+    _wait_time = 30
+    # longer wait time because it's not a benchmark
+
     def test_shutdown(self):
         """Send to minode SIGTERM and ensure it stopped"""
-        # longer wait time because it's not a benchmark
         self.assertTrue(
-            self._stop_process(20),
-            '%s has not stopped in 20 sec' % ' '.join(self._process_cmd))
+            self._stop_process(self._wait_time),
+            '%s has not stopped in %i sec' % (
+                ' '.join(self._process_cmd), self._wait_time))
 
 
 class TestProcess(TestProcessProto):
@@ -105,8 +108,8 @@ class TestProcess(TestProcessProto):
             time.sleep(0.5)
         else:
             self.fail(
-                'Failed establish at least %s connections in %s sec'
-                % (self._connection_limit / 2, self._wait_time))
+                'Failed establish at least %i connections in %s sec'
+                % (int(self._connection_limit / 2), self._wait_time))
 
         if self._check_limit:
             continue_check_limit(_time_to_connect)
@@ -128,7 +131,6 @@ class TestProcessI2P(TestProcess):
     """Test minode process with --i2p and no IP"""
     _process_cmd = ['minode', '--i2p', '--no-ip']
     _connection_limit = 4
-    _wait_time = 120
     _listen = True
     _listening_port = 8448
 

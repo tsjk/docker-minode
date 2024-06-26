@@ -1,3 +1,11 @@
-.git
-.tox
-dist
+**/.buildbot
+**/.git
+**/.github
+.dockerignore
+.gitignore
+Dockerfile
+i2p_bridge.sh
+podman-build.sh
+podman-run.sh
+start.sh
+update.sh

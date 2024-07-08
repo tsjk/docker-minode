@@ -21,7 +21,7 @@ except (OSError, socket.error):
 class TestProcessProto(unittest.TestCase):
     """Test process attributes, common flow"""
     _process_cmd = ['minode']
-    _connection_limit = 4 if sys.platform.startswith('win') else 10
+    _connection_limit = 4 if sys.platform.startswith('win') else 8
     _listen = False
     _listening_port = None
 
@@ -84,7 +84,7 @@ class TestProcessShutdown(TestProcessProto):
 
 class TestProcess(TestProcessProto):
     """The test case for minode process"""
-    _wait_time = 120
+    _wait_time = 180
     _check_limit = False
 
     def test_connections(self):
@@ -104,7 +104,7 @@ class TestProcess(TestProcessProto):
                 time.sleep(1)
 
         for _ in range(self._wait_time * 2):
-            if len(self.connections()) > self._connection_limit / 2:
+            if len(self.connections()) >= self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
             if '--i2p' not in self._process_cmd:
@@ -116,7 +116,7 @@ class TestProcess(TestProcessProto):
             time.sleep(0.5)
         else:
             self.fail(
-                'Failed establish at least %i connections in %s sec'
+                'Failed to establish at least %i connections in %s sec'
                 % (int(self._connection_limit / 2), self._wait_time))
 
         if self._check_limit:

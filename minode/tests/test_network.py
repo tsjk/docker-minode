@@ -1,4 +1,5 @@
 """Tests for network connections"""
+import ipaddress
 import logging
 import os
 import random
@@ -78,6 +79,17 @@ class TestNetwork(unittest.TestCase):
 
         main.bootstrap_from_dns()
         self.assertGreaterEqual(len(shared.core_nodes), core_nodes_len)
+        for host, _ in shared.core_nodes:
+            try:
+                ipaddress.IPv4Address(host)
+            except ipaddress.AddressValueError:
+                try:
+                    ipaddress.IPv6Address(host)
+                except ipaddress.AddressValueError:
+                    self.fail('Found not an IP address in the core nodes')
+                break
+        else:
+            self.fail('No IPv6 address found in the core nodes')
 
     def test_bootstrap(self):
         """Start bootstrappers and check node pool"""

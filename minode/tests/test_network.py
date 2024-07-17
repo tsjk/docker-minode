@@ -249,3 +249,31 @@ class TestListener(TestProcessProto):
                         if c.status == 'fully_established':
                             self.fail('Established a connection')
                     time.sleep(0.5)
+
+
+class TestBootstrapProcess(TestProcessProto):
+    """A separate test case for bootstrapping with a minode process"""
+    _listen = True
+    _connection_limit = 24
+
+    def test_bootstrap(self):
+        """Start a bootstrapper for the local process and check node pool"""
+        if shared.unchecked_node_pool:
+            shared.unchecked_node_pool = set()
+
+        started = time.time()
+        while not self.connections():
+            if time.time() - started > 60:
+                self.fail('Failed to establish a connection')
+            time.sleep(1)
+
+        for _ in range(3):
+            c = connection.Bootstrapper('127.0.0.1', 8444)
+            c.start()
+            c.join()
+            if len(shared.unchecked_node_pool) > 2:
+                break
+        else:
+            self.fail(
+                'Failed to find at least 3 nodes'
+                ' after 3 tries to bootstrap with the local process')

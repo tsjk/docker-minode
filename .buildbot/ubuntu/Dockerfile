@@ -18,4 +18,4 @@ RUN pip install --upgrade pip tox virtualenv
 
 ADD . .
 
-CMD .buildbot/ubuntu/test.sh
+CMD .buildbot/ubuntu/build.sh && .buildbot/ubuntu/test.sh

@@ -1,7 +1,6 @@
 """Blind tests, starting the minode process"""
 import os
 import signal
-import socket
 import subprocess
 import sys
 import tempfile
@@ -13,11 +12,7 @@ import psutil
 from minode.i2p import util
 from minode.structure import NetAddrNoPrefix
 
-try:
-    socket.socket().bind(('127.0.0.1', 7656))
-    i2p_port_free = True
-except (OSError, socket.error):
-    i2p_port_free = False
+from .common import i2p_port_free
 
 
 class TestProcessProto(unittest.TestCase):

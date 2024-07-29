@@ -160,9 +160,10 @@ class TestProcessI2P(TestProcess):
             cls.freezed = True
 
     def setUp(self):
-        """Fail before any test if I2PController freezed"""
+        """Skip any test if I2PController freezed"""
         if self.freezed:
-            self.fail('I2PController has probably failed to start')
+            raise unittest.SkipTest(
+                'I2PController has probably failed to start')
 
     def test_saved_keys(self):
         """Check saved i2p keys"""

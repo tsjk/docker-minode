@@ -10,6 +10,7 @@ import unittest
 
 import psutil
 
+from minode.i2p import util
 from minode.structure import NetAddrNoPrefix
 
 try:
@@ -158,10 +159,21 @@ class TestProcessI2P(TestProcess):
         else:
             cls.freezed = True
 
-    def test_connections(self):
-        """Ensure all connections are I2P"""
+    def setUp(self):
+        """Fail before any test if I2PController freezed"""
         if self.freezed:
             self.fail('I2PController has probably failed to start')
+
+    def test_saved_keys(self):
+        """Check saved i2p keys"""
+        with open(self.keyfile, 'br') as src:
+            i2p_dest_pub = src.read()
+        with open(os.path.join(self.home, 'i2p_dest_priv.key'), 'br') as src:
+            i2p_dest_priv = src.read()
+        self.assertEqual(util.pub_from_priv(i2p_dest_priv), i2p_dest_pub)
+
+    def test_connections(self):
+        """Ensure all connections are I2P"""
         super().test_connections()
         for c in self.connections():
             self.assertEqual(c.raddr[0], '127.0.0.1')

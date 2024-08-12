@@ -11,7 +11,7 @@ import threading
 import time
 
 from . import proofofwork, shared, structure
-from .connection import Connection
+from .connection import Bootstrapper, Connection
 from .i2p import I2PDialer
 
 
@@ -20,6 +20,7 @@ class Manager(threading.Thread):
     def __init__(self):
         super().__init__(name='Manager')
         self.q = queue.Queue()
+        self.bootstrap_pool = []
         self.last_cleaned_objects = time.time()
         self.last_cleaned_connections = time.time()
         self.last_pickled_objects = time.time()
@@ -28,9 +29,15 @@ class Manager(threading.Thread):
         self.last_published_i2p_destination = \
             time.time() - 50 * 60 + random.uniform(-1, 1) * 300  # nosec B311
 
+    def fill_bootstrap_pool(self):
+        """Populate the bootstrap pool by core nodes and checked ones"""
+        self.bootstrap_pool = list(shared.core_nodes.union(shared.node_pool))
+        random.shuffle(self.bootstrap_pool)
+
     def run(self):
         self.load_data()
         self.clean_objects()
+        self.fill_bootstrap_pool()
         while True:
             time.sleep(0.8)
             now = time.time()
@@ -56,28 +63,47 @@ class Manager(threading.Thread):
     @staticmethod
     def clean_objects():
         for vector in set(shared.objects):
-            if not shared.objects[vector].is_valid():
-                if shared.objects[vector].is_expired():
-                    logging.debug(
-                        'Deleted expired object: %s',
-                        base64.b16encode(vector).decode())
-                else:
-                    logging.warning(
-                        'Deleted invalid object: %s',
-                        base64.b16encode(vector).decode())
+            # FIXME: no need to check is_valid() here
+            if shared.objects[vector].is_expired():
+                logging.debug(
+                    'Deleted expired object: %s',
+                    base64.b16encode(vector).decode())
                 with shared.objects_lock:
                     del shared.objects[vector]
 
-    @staticmethod
-    def manage_connections():
+    def manage_connections(self):
+        """Open new connections if needed, remove closed ones"""
         hosts = set()
+
+        def connect(target, connection_class=Connection):
+            """
+            Open a connection of *connection_class*
+            to the *target* (host, port)
+            """
+            c = connection_class(*target)
+            c.start()
+            with shared.connections_lock:
+                shared.connections.add(c)
+
+        def bootstrap():
+            """Bootstrap from DNS seed-nodes and known nodes"""
+            try:
+                target = self.bootstrap_pool.pop()
+            except IndexError:
+                logging.warning(
+                    'Ran out of bootstrap nodes, refilling')
+                self.fill_bootstrap_pool()
+                return
+            logging.info('Starting a bootstrapper for %s:%s', *target)
+            connect(target, Bootstrapper)
+
         outgoing_connections = 0
         for c in shared.connections.copy():
             if not c.is_alive() or c.status == 'disconnected':
                 with shared.connections_lock:
                     shared.connections.remove(c)
             else:
-                hosts.add(c.host)
+                hosts.add(structure.NetAddrNoPrefix.network_group(c.host))
                 if not c.server:
                     outgoing_connections += 1
 
@@ -98,36 +124,41 @@ class Manager(threading.Thread):
             if shared.ip_enabled:
                 if len(shared.unchecked_node_pool) > 16:
                     to_connect.update(random.sample(
-                        shared.unchecked_node_pool, 16))
+                        tuple(shared.unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.unchecked_node_pool)
+                    if outgoing_connections < shared.outgoing_connections / 2:
+                        bootstrap()
                 shared.unchecked_node_pool.difference_update(to_connect)
                 if len(shared.node_pool) > 8:
-                    to_connect.update(random.sample(shared.node_pool, 8))
+                    to_connect.update(random.sample(
+                        tuple(shared.node_pool), 8))
                 else:
                     to_connect.update(shared.node_pool)
 
             if shared.i2p_enabled:
                 if len(shared.i2p_unchecked_node_pool) > 16:
-                    to_connect.update(
-                        random.sample(shared.i2p_unchecked_node_pool, 16))
+                    to_connect.update(random.sample(
+                        tuple(shared.i2p_unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.i2p_unchecked_node_pool)
                 shared.i2p_unchecked_node_pool.difference_update(to_connect)
                 if len(shared.i2p_node_pool) > 8:
-                    to_connect.update(random.sample(shared.i2p_node_pool, 8))
+                    to_connect.update(random.sample(
+                        tuple(shared.i2p_node_pool), 8))
                 else:
                     to_connect.update(shared.i2p_node_pool)
 
-        for addr in to_connect:
-            if addr[0] in hosts:
+        for host, port in to_connect:
+            group = structure.NetAddrNoPrefix.network_group(host)
+            if group in hosts:
                 continue
-            if addr[1] == 'i2p' and shared.i2p_enabled:
-                if shared.i2p_session_nick and addr[0] != shared.i2p_dest_pub:
+            if port == 'i2p' and shared.i2p_enabled:
+                if shared.i2p_session_nick and host != shared.i2p_dest_pub:
                     try:
                         d = I2PDialer(
                             shared,
-                            addr[0], shared.i2p_session_nick,
+                            host, shared.i2p_session_nick,
                             shared.i2p_sam_host, shared.i2p_sam_port)
                         d.start()
                         hosts.add(d.destination)
@@ -139,11 +170,8 @@ class Manager(threading.Thread):
                 else:
                     continue
             else:
-                c = Connection(addr[0], addr[1])
-                c.start()
-                hosts.add(c.host)
-                with shared.connections_lock:
-                    shared.connections.add(c)
+                connect((host, port))
+                hosts.add(group)
         shared.hosts = hosts
 
     @staticmethod
@@ -187,7 +215,7 @@ class Manager(threading.Thread):
             'r', newline='', encoding='ascii'
         ) as src:
             reader = csv.reader(src)
-            shared.core_nodes = {tuple(row) for row in reader}
+            shared.core_nodes = {(row[0], int(row[1])) for row in reader}
             shared.node_pool.update(shared.core_nodes)
 
         with open(
@@ -214,17 +242,18 @@ class Manager(threading.Thread):
     @staticmethod
     def pickle_nodes():
         if len(shared.node_pool) > 10000:
-            shared.node_pool = set(random.sample(shared.node_pool, 10000))
+            shared.node_pool = set(random.sample(
+                tuple(shared.node_pool), 10000))
         if len(shared.unchecked_node_pool) > 1000:
-            shared.unchecked_node_pool = set(
-                random.sample(shared.unchecked_node_pool, 1000))
+            shared.unchecked_node_pool = set(random.sample(
+                tuple(shared.unchecked_node_pool), 1000))
 
         if len(shared.i2p_node_pool) > 1000:
-            shared.i2p_node_pool = set(
-                random.sample(shared.i2p_node_pool, 1000))
+            shared.i2p_node_pool = set(random.sample(
+                tuple(shared.i2p_node_pool), 1000))
         if len(shared.i2p_unchecked_node_pool) > 100:
-            shared.i2p_unchecked_node_pool = set(
-                random.sample(shared.i2p_unchecked_node_pool, 100))
+            shared.i2p_unchecked_node_pool = set(random.sample(
+                tuple(shared.i2p_unchecked_node_pool), 100))
 
         try:
             with open(

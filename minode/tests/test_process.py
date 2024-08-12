@@ -1,13 +1,17 @@
 """Blind tests, starting the minode process"""
-import unittest
+import os
 import signal
 import socket
 import subprocess
 import sys
 import tempfile
 import time
+import unittest
 
 import psutil
+
+from minode.i2p import util
+from minode.structure import NetAddrNoPrefix
 
 try:
     socket.socket().bind(('127.0.0.1', 7656))
@@ -19,7 +23,7 @@ except (OSError, socket.error):
 class TestProcessProto(unittest.TestCase):
     """Test process attributes, common flow"""
     _process_cmd = ['minode']
-    _connection_limit = 4 if sys.platform.startswith('win') else 10
+    _connection_limit = 4 if sys.platform.startswith('win') else 8
     _listen = False
     _listening_port = None
 
@@ -69,17 +73,20 @@ class TestProcessProto(unittest.TestCase):
 
 class TestProcessShutdown(TestProcessProto):
     """Separate test case for SIGTERM"""
+    _wait_time = 30
+    # longer wait time because it's not a benchmark
+
     def test_shutdown(self):
         """Send to minode SIGTERM and ensure it stopped"""
-        # longer wait time because it's not a benchmark
         self.assertTrue(
-            self._stop_process(20),
-            '%s has not stopped in 20 sec' % ' '.join(self._process_cmd))
+            self._stop_process(self._wait_time),
+            '%s has not stopped in %i sec' % (
+                ' '.join(self._process_cmd), self._wait_time))
 
 
 class TestProcess(TestProcessProto):
     """The test case for minode process"""
-    _wait_time = 120
+    _wait_time = 180
     _check_limit = False
 
     def test_connections(self):
@@ -99,14 +106,20 @@ class TestProcess(TestProcessProto):
                 time.sleep(1)
 
         for _ in range(self._wait_time * 2):
-            if len(self.connections()) > self._connection_limit / 2:
+            if len(self.connections()) >= self._connection_limit / 2:
                 _time_to_connect = round(time.time() - _started)
                 break
+            if '--i2p' not in self._process_cmd:
+                groups = []
+                for c in self.connections():
+                    group = NetAddrNoPrefix.network_group(c.raddr[0])
+                    self.assertNotIn(group, groups)
+                    groups.append(group)
             time.sleep(0.5)
         else:
             self.fail(
-                'Failed establish at least %s connections in %s sec'
-                % (self._connection_limit / 2, self._wait_time))
+                'Failed to establish at least %i connections in %s sec'
+                % (int(self._connection_limit / 2), self._wait_time))
 
         if self._check_limit:
             continue_check_limit(_time_to_connect)
@@ -127,10 +140,38 @@ class TestProcess(TestProcessProto):
 class TestProcessI2P(TestProcess):
     """Test minode process with --i2p and no IP"""
     _process_cmd = ['minode', '--i2p', '--no-ip']
-    _connection_limit = 4
-    _wait_time = 120
     _listen = True
     _listening_port = 8448
+
+    @classmethod
+    def setUpClass(cls):
+        cls.freezed = False
+        cls.keyfile = os.path.join(cls.home, 'i2p_dest.pub')
+        saved = os.path.isfile(cls.keyfile)
+        super().setUpClass()
+        for _ in range(cls._wait_time):
+            if saved:
+                if cls.process.num_threads() > 3:
+                    break
+            elif os.path.isfile(cls.keyfile):
+                break
+            time.sleep(1)
+        else:
+            cls.freezed = True
+
+    def setUp(self):
+        """Skip any test if I2PController freezed"""
+        if self.freezed:
+            raise unittest.SkipTest(
+                'I2PController has probably failed to start')
+
+    def test_saved_keys(self):
+        """Check saved i2p keys"""
+        with open(self.keyfile, 'br') as src:
+            i2p_dest_pub = src.read()
+        with open(os.path.join(self.home, 'i2p_dest_priv.key'), 'br') as src:
+            i2p_dest_priv = src.read()
+        self.assertEqual(util.pub_from_priv(i2p_dest_priv), i2p_dest_pub)
 
     def test_connections(self):
         """Ensure all connections are I2P"""

@@ -1,6 +1,6 @@
 # MiNode
 
-[![Quick Test](https://github.com/g1itch/MiNode/actions/workflows/test.yml/badge.svg)](https://github.com/g1itch/MiNode/actions/workflows/test.yml)
+[![Testing](https://git.bitmessage.org/Bitmessage/MiNode/actions/workflows/test.yml/badge.svg)](https://git.bitmessage.org/Bitmessage/MiNode/actions?workflow=test.yml)
 
 Python 3 implementation of the Bitmessage protocol. Designed only to route
 objects inside the network.
@@ -11,7 +11,7 @@ objects inside the network.
 
 ## Running
 ```
-git clone https://git.bitmessage.org/lee.miller/MiNode.git
+git clone https://git.bitmessage.org/Bitmessage/MiNode.git
 ```
 ```
 cd MiNode

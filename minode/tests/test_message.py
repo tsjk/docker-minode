@@ -1,4 +1,6 @@
 """Tests for messages"""
+import struct
+import time
 import unittest
 from binascii import unhexlify
 
@@ -75,6 +77,13 @@ class TestMessage(unittest.TestCase):
         """Test version message"""
         msg = message.Message.from_bytes(sample_version_msg)
         self.assertEqual(msg.command, b'version')
+        with self.assertRaises(ValueError):
+            # large time offset
+            version_packet = message.Version.from_message(msg)
+        msg.payload = (
+            msg.payload[:12] + struct.pack('>Q', int(time.time()))
+            + msg.payload[20:])
+
         version_packet = message.Version.from_message(msg)
         self.assertEqual(version_packet.host, '127.0.0.1')
         self.assertEqual(version_packet.port, 8444)

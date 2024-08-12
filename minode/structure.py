@@ -173,6 +173,21 @@ class NetAddrNoPrefix():
         b += struct.pack('>H', int(self.port))
         return b
 
+    @staticmethod
+    def network_group(host):
+        """A simplified network group identifier from pybitmessage protocol"""
+        try:
+            host = socket.inet_pton(socket.AF_INET, host)
+            return host[:2]
+        except socket.error:
+            try:
+                host = socket.inet_pton(socket.AF_INET6, host)
+                return host[:12]
+            except OSError:
+                return host
+        except TypeError:
+            return host
+
     @classmethod
     def from_bytes(cls, b):
         services, host, port = struct.unpack('>Q16sH', b)

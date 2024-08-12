@@ -145,9 +145,12 @@ class Version():
     def from_message(cls, m):
         payload = m.payload
 
-        (  # unused: timestamp, net_addr_local
-            protocol_version, services, _, net_addr_remote, _, nonce
+        (  # unused: net_addr_local
+            protocol_version, services, timestamp, net_addr_remote, _, nonce
         ) = struct.unpack('>IQQ26s26s8s', payload[:80])
+
+        if abs(time.time() - timestamp) > 3600:
+            raise ValueError('remote time offset is too large')
 
         net_addr_remote = structure.NetAddrNoPrefix.from_bytes(net_addr_remote)
 

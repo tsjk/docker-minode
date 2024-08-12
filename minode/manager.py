@@ -77,7 +77,7 @@ class Manager(threading.Thread):
                 with shared.connections_lock:
                     shared.connections.remove(c)
             else:
-                hosts.add(c.host)
+                hosts.add(structure.NetAddrNoPrefix.network_group(c.host))
                 if not c.server:
                     outgoing_connections += 1
 
@@ -98,36 +98,39 @@ class Manager(threading.Thread):
             if shared.ip_enabled:
                 if len(shared.unchecked_node_pool) > 16:
                     to_connect.update(random.sample(
-                        shared.unchecked_node_pool, 16))
+                        tuple(shared.unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.unchecked_node_pool)
                 shared.unchecked_node_pool.difference_update(to_connect)
                 if len(shared.node_pool) > 8:
-                    to_connect.update(random.sample(shared.node_pool, 8))
+                    to_connect.update(random.sample(
+                        tuple(shared.node_pool), 8))
                 else:
                     to_connect.update(shared.node_pool)
 
             if shared.i2p_enabled:
                 if len(shared.i2p_unchecked_node_pool) > 16:
-                    to_connect.update(
-                        random.sample(shared.i2p_unchecked_node_pool, 16))
+                    to_connect.update(random.sample(
+                        tuple(shared.i2p_unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.i2p_unchecked_node_pool)
                 shared.i2p_unchecked_node_pool.difference_update(to_connect)
                 if len(shared.i2p_node_pool) > 8:
-                    to_connect.update(random.sample(shared.i2p_node_pool, 8))
+                    to_connect.update(random.sample(
+                        tuple(shared.i2p_node_pool), 8))
                 else:
                     to_connect.update(shared.i2p_node_pool)
 
-        for addr in to_connect:
-            if addr[0] in hosts:
+        for host, port in to_connect:
+            group = structure.NetAddrNoPrefix.network_group(host)
+            if group in hosts:
                 continue
-            if addr[1] == 'i2p' and shared.i2p_enabled:
-                if shared.i2p_session_nick and addr[0] != shared.i2p_dest_pub:
+            if port == 'i2p' and shared.i2p_enabled:
+                if shared.i2p_session_nick and host != shared.i2p_dest_pub:
                     try:
                         d = I2PDialer(
                             shared,
-                            addr[0], shared.i2p_session_nick,
+                            host, shared.i2p_session_nick,
                             shared.i2p_sam_host, shared.i2p_sam_port)
                         d.start()
                         hosts.add(d.destination)
@@ -139,9 +142,9 @@ class Manager(threading.Thread):
                 else:
                     continue
             else:
-                c = Connection(addr[0], addr[1])
+                c = Connection(host, port)
                 c.start()
-                hosts.add(c.host)
+                hosts.add(group)
                 with shared.connections_lock:
                     shared.connections.add(c)
         shared.hosts = hosts
@@ -214,17 +217,18 @@ class Manager(threading.Thread):
     @staticmethod
     def pickle_nodes():
         if len(shared.node_pool) > 10000:
-            shared.node_pool = set(random.sample(shared.node_pool, 10000))
+            shared.node_pool = set(random.sample(
+                tuple(shared.node_pool), 10000))
         if len(shared.unchecked_node_pool) > 1000:
-            shared.unchecked_node_pool = set(
-                random.sample(shared.unchecked_node_pool, 1000))
+            shared.unchecked_node_pool = set(random.sample(
+                tuple(shared.unchecked_node_pool), 1000))
 
         if len(shared.i2p_node_pool) > 1000:
-            shared.i2p_node_pool = set(
-                random.sample(shared.i2p_node_pool, 1000))
+            shared.i2p_node_pool = set(random.sample(
+                tuple(shared.i2p_node_pool), 1000))
         if len(shared.i2p_unchecked_node_pool) > 100:
-            shared.i2p_unchecked_node_pool = set(
-                random.sample(shared.i2p_unchecked_node_pool, 100))
+            shared.i2p_unchecked_node_pool = set(random.sample(
+                tuple(shared.i2p_unchecked_node_pool), 100))
 
         try:
             with open(

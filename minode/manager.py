@@ -172,7 +172,6 @@ class Manager(threading.Thread):
             else:
                 connect((host, port))
                 hosts.add(group)
-        shared.hosts = hosts
 
     @staticmethod
     def load_data():

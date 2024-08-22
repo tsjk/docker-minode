@@ -1,0 +1,25 @@
+diff --git a/minode/main.py b/minode/main.py
+index 7b52796..d37281e 100644
+--- a/minode/main.py
++++ b/minode/main.py
+@@ -122,20 +122,6 @@ def start_ip_listener():
+     listener_ipv4 = None
+     listener_ipv6 = None
+ 
+-    if socket.has_ipv6:
+-        try:
+-            listener_ipv6 = Listener(
+-                shared.listening_host,
+-                shared.listening_port, family=socket.AF_INET6)
+-            listener_ipv6.start()
+-        except socket.gaierror as e:
+-            if e.errno == -9:
+-                logging.info('IPv6 is not supported.')
+-        except Exception:
+-            logging.info(
+-                'Error while starting IPv6 listener on port %s',
+-                shared.listening_port, exc_info=True)
+-
+     try:
+         listener_ipv4 = Listener(shared.listening_host, shared.listening_port)
+         listener_ipv4.start()

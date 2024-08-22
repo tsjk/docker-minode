@@ -1,0 +1,13 @@
+diff --git a/minode/manager.py b/minode/manager.py
+index 8393f64..351bbaf 100644
+--- a/minode/manager.py
++++ b/minode/manager.py
+@@ -146,7 +146,6 @@ class Manager(threading.Thread):
+                 hosts.add(c.host)
+                 with shared.connections_lock:
+                     shared.connections.add(c)
+-        shared.hosts = hosts
+ 
+     @staticmethod
+     def load_data():
+

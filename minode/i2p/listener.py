@@ -49,6 +49,7 @@ class I2PListener(I2PThread):
                         destination, 'i2p', self.s, 'i2p', True, destination)
                     c.start()
                     self.state.connections.add(c)
+                    c = None
                 self.new_socket()
             except socket.timeout:
                 pass

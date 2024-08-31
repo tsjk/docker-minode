@@ -11,7 +11,7 @@ objects inside the network.
 
 ## Running
 ```
-git clone https://git.bitmessage.org/lee.miller/MiNode.git
+git clone https://git.bitmessage.org/Bitmessage/MiNode.git
 ```
 ```
 cd MiNode

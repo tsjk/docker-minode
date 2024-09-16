@@ -63,15 +63,11 @@ class Manager(threading.Thread):
     @staticmethod
     def clean_objects():
         for vector in set(shared.objects):
-            if not shared.objects[vector].is_valid():
-                if shared.objects[vector].is_expired():
-                    logging.debug(
-                        'Deleted expired object: %s',
-                        base64.b16encode(vector).decode())
-                else:
-                    logging.warning(
-                        'Deleted invalid object: %s',
-                        base64.b16encode(vector).decode())
+            # FIXME: no need to check is_valid() here
+            if shared.objects[vector].is_expired():
+                logging.debug(
+                    'Deleted expired object: %s',
+                    base64.b16encode(vector).decode())
                 with shared.objects_lock:
                     del shared.objects[vector]
 

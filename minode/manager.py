@@ -62,6 +62,7 @@ class Manager(threading.Thread):
 
     @staticmethod
     def clean_objects():
+        """Remove expired objects"""
         for vector in set(shared.objects):
             # FIXME: no need to check is_valid() here
             if shared.objects[vector].is_expired():
@@ -175,7 +176,7 @@ class Manager(threading.Thread):
 
     @staticmethod
     def load_data():
-        """Loads initial nodes and data, stored in files between sessions"""
+        """Load initial nodes and data, stored in files between sessions"""
         try:
             with open(
                 os.path.join(shared.data_directory, 'objects.pickle'), 'br'
@@ -228,6 +229,7 @@ class Manager(threading.Thread):
 
     @staticmethod
     def pickle_objects():
+        """Save objects into a file objects.pickle in the data directory"""
         try:
             with open(
                 os.path.join(shared.data_directory, 'objects.pickle'), 'bw'
@@ -240,6 +242,7 @@ class Manager(threading.Thread):
 
     @staticmethod
     def pickle_nodes():
+        """Save nodes into files in the data directory"""
         if len(shared.node_pool) > 10000:
             shared.node_pool = set(random.sample(
                 tuple(shared.node_pool), 10000))
@@ -269,6 +272,7 @@ class Manager(threading.Thread):
 
     @staticmethod
     def publish_i2p_destination():
+        """Make and publish a special object, containing the I2P destination"""
         if shared.i2p_session_nick and not shared.i2p_transient:
             logging.info('Publishing our I2P destination')
             dest_pub_raw = base64.b64decode(

@@ -7,7 +7,9 @@ import unittest
 
 from minode import main, shared
 
-from .common import i2p_port_free
+from .common import i2p_port, i2p_port_free
+
+shared.i2p_sam_port = i2p_port
 
 
 @unittest.skipIf(i2p_port_free, 'No running i2pd detected')

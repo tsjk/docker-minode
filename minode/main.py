@@ -195,7 +195,8 @@ def start_i2p_listener():
     logging.info('I2P session nick: %s', shared.i2p_session_nick.decode())
 
     logging.info('Starting I2P Listener')
-    i2p_listener = i2p.I2PListener(shared, i2p_controller.nick)
+    i2p_listener = i2p.I2PListener(
+        shared, i2p_controller.nick, shared.i2p_sam_host, shared.i2p_sam_port)
     i2p_listener.start()
 
     if not shared.i2p_transient:

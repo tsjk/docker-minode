@@ -124,7 +124,7 @@ class Manager(threading.Thread):
 
             if shared.ip_enabled:
                 if len(shared.unchecked_node_pool) > 16:
-                    to_connect.update(random.sample(
+                    to_connect.update(random.sample(  # nosec B311
                         tuple(shared.unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.unchecked_node_pool)
@@ -132,20 +132,20 @@ class Manager(threading.Thread):
                         bootstrap()
                 shared.unchecked_node_pool.difference_update(to_connect)
                 if len(shared.node_pool) > 8:
-                    to_connect.update(random.sample(
+                    to_connect.update(random.sample(  # nosec B311
                         tuple(shared.node_pool), 8))
                 else:
                     to_connect.update(shared.node_pool)
 
             if shared.i2p_enabled:
                 if len(shared.i2p_unchecked_node_pool) > 16:
-                    to_connect.update(random.sample(
+                    to_connect.update(random.sample(  # nosec B311
                         tuple(shared.i2p_unchecked_node_pool), 16))
                 else:
                     to_connect.update(shared.i2p_unchecked_node_pool)
                 shared.i2p_unchecked_node_pool.difference_update(to_connect)
                 if len(shared.i2p_node_pool) > 8:
-                    to_connect.update(random.sample(
+                    to_connect.update(random.sample(  # nosec B311
                         tuple(shared.i2p_node_pool), 8))
                 else:
                     to_connect.update(shared.i2p_node_pool)
@@ -244,17 +244,17 @@ class Manager(threading.Thread):
     def pickle_nodes():
         """Save nodes into files in the data directory"""
         if len(shared.node_pool) > 10000:
-            shared.node_pool = set(random.sample(
+            shared.node_pool = set(random.sample(  # nosec B311
                 tuple(shared.node_pool), 10000))
         if len(shared.unchecked_node_pool) > 1000:
-            shared.unchecked_node_pool = set(random.sample(
+            shared.unchecked_node_pool = set(random.sample(  # nosec B311
                 tuple(shared.unchecked_node_pool), 1000))
 
         if len(shared.i2p_node_pool) > 1000:
-            shared.i2p_node_pool = set(random.sample(
+            shared.i2p_node_pool = set(random.sample(  # nosec B311
                 tuple(shared.i2p_node_pool), 1000))
         if len(shared.i2p_unchecked_node_pool) > 100:
-            shared.i2p_unchecked_node_pool = set(random.sample(
+            shared.i2p_unchecked_node_pool = set(random.sample(  # nosec B311
                 tuple(shared.i2p_unchecked_node_pool), 100))
 
         try:

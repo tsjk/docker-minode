@@ -1,21 +1,18 @@
 """Blind tests, starting the minode process"""
-import unittest
+import os
 import signal
-import socket
 import subprocess
 import sys
 import tempfile
 import time
+import unittest
 
 import psutil
 
+from minode.i2p import util
 from minode.structure import NetAddrNoPrefix
 
-try:
-    socket.socket().bind(('127.0.0.1', 7656))
-    i2p_port_free = True
-except (OSError, socket.error):
-    i2p_port_free = False
+from .common import i2p_port, i2p_port_free
 
 
 class TestProcessProto(unittest.TestCase):
@@ -137,17 +134,47 @@ class TestProcess(TestProcessProto):
 @unittest.skipIf(i2p_port_free, 'No running i2pd detected')
 class TestProcessI2P(TestProcess):
     """Test minode process with --i2p and no IP"""
-    _process_cmd = ['minode', '--i2p', '--no-ip']
-    _connection_limit = 4
+    _process_cmd = [
+        'minode', '--i2p', '--no-ip', '--i2p-sam-port', str(i2p_port)]
     _listen = True
     _listening_port = 8448
+
+    @classmethod
+    def setUpClass(cls):
+        cls.freezed = False
+        cls.keyfile = os.path.join(cls.home, 'i2p_dest.pub')
+        saved = os.path.isfile(cls.keyfile)
+        super().setUpClass()
+        for _ in range(cls._wait_time):
+            if saved:
+                if cls.process.num_threads() > 3:
+                    break
+            elif os.path.isfile(cls.keyfile):
+                break
+            time.sleep(1)
+        else:
+            cls.freezed = True
+
+    def setUp(self):
+        """Skip any test if I2PController freezed"""
+        if self.freezed:
+            raise unittest.SkipTest(
+                'I2PController has probably failed to start')
+
+    def test_saved_keys(self):
+        """Check saved i2p keys"""
+        with open(self.keyfile, 'br') as src:
+            i2p_dest_pub = src.read()
+        with open(os.path.join(self.home, 'i2p_dest_priv.key'), 'br') as src:
+            i2p_dest_priv = src.read()
+        self.assertEqual(util.pub_from_priv(i2p_dest_priv), i2p_dest_pub)
 
     def test_connections(self):
         """Ensure all connections are I2P"""
         super().test_connections()
         for c in self.connections():
             self.assertEqual(c.raddr[0], '127.0.0.1')
-            self.assertEqual(c.raddr[1], 7656)
+            self.assertEqual(c.raddr[1], i2p_port)
 
 
 @unittest.skipUnless(i2p_port_free, 'Detected running i2pd')

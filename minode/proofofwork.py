@@ -50,5 +50,10 @@ def _worker(obj):
 
 
 def do_pow_and_publish(obj):
+    """
+    Start a worker thread, doing PoW for the given object
+    and putting a new object and its vector into appropriate places in `shared`
+    to advertize to the network.
+    """
     t = threading.Thread(target=_worker, args=(obj, ))
     t.start()

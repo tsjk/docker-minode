@@ -269,11 +269,13 @@ class ConnectionBase(threading.Thread):
         if len(shared.node_pool) > 10:
             addr.update({
                 structure.NetAddr(1, a[0], a[1])
-                for a in random.sample(tuple(shared.node_pool), 10)})
+                for a in random.sample(  # nosec B311
+                        tuple(shared.node_pool), 10)})
         if len(shared.unchecked_node_pool) > 10:
             addr.update({
                 structure.NetAddr(1, a[0], a[1])
-                for a in random.sample(tuple(shared.unchecked_node_pool), 10)})
+                for a in random.sample(  # nosec B311
+                        tuple(shared.unchecked_node_pool), 10)})
         if len(addr) != 0:
             self.send_queue.put(message.Addr(addr))
 
@@ -287,7 +289,8 @@ class ConnectionBase(threading.Thread):
                         # We limit size of inv messaged to 10000 entries
                         # because they might time out
                         # in very slow networks (I2P)
-                        pack = random.sample(tuple(to_send), 10000)
+                        pack = random.sample(  # nosec B311
+                            tuple(to_send), 10000)
                         self.send_queue.put(message.Inv(pack))
                         to_send.difference_update(pack)
                     else:
@@ -411,7 +414,8 @@ class ConnectionBase(threading.Thread):
         addr = message.Addr.from_message(m)
         logging.debug('%s:%s -> %s', self.host_print, self.port, addr)
         for a in addr.addresses:
-            shared.unchecked_node_pool.add((a.host, a.port))
+            if (a.host, a.port) not in shared.core_nodes:
+                shared.unchecked_node_pool.add((a.host, a.port))
 
     def _request_objects(self):
         if self.vectors_to_get and len(self.vectors_requested) < 100:
@@ -427,7 +431,8 @@ class ConnectionBase(threading.Thread):
                 logging.info(
                     'Queued %s vectors to get', len(self.vectors_to_get))
                 if len(self.vectors_to_get) > 64:
-                    pack = random.sample(tuple(self.vectors_to_get), 64)
+                    pack = random.sample(  # nosec B311
+                        tuple(self.vectors_to_get), 64)
                     self.send_queue.put(message.GetData(pack))
                     self.vectors_requested.update({
                         vector: time.time() for vector in pack
@@ -457,7 +462,8 @@ class ConnectionBase(threading.Thread):
             logging.info(
                 'Preparing to send %s objects', len(self.vectors_to_send))
             if len(self.vectors_to_send) > 16:
-                to_send = random.sample(tuple(self.vectors_to_send), 16)
+                to_send = random.sample(  # nosec B311
+                    tuple(self.vectors_to_send), 16)
                 self.vectors_to_send.difference_update(to_send)
             else:
                 to_send = self.vectors_to_send.copy()
@@ -505,6 +511,15 @@ class Connection(ConnectionBase):
         getdata = message.GetData.from_message(m)
         logging.debug('%s:%s -> %s', self.host_print, self.port, getdata)
         self.vectors_to_send.update(getdata.vectors)
+
+
+class Bootstrapper(ConnectionBase):
+    """A special type of connection to find IP nodes"""
+    def _process_msg_addr(self, m):
+        super()._process_msg_addr(m)
+        shared.node_pool.discard((self.host, self.port))
+        self.status = 'disconnecting'
+        self.send_queue.put(None)
 
 
 shared.connection = Connection

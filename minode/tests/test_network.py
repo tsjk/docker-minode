@@ -1,4 +1,5 @@
 """Tests for network connections"""
+import ipaddress
 import logging
 import os
 import random
@@ -73,10 +74,43 @@ class TestNetwork(unittest.TestCase):
 
     def _make_initial_nodes(self):
         Manager.load_data()
-        self.assertGreaterEqual(len(shared.core_nodes), 3)
+        core_nodes_len = len(shared.core_nodes)
+        self.assertGreaterEqual(core_nodes_len, 3)
 
         main.bootstrap_from_dns()
-        self.assertGreaterEqual(len(shared.unchecked_node_pool), 3)
+        self.assertGreaterEqual(len(shared.core_nodes), core_nodes_len)
+        for host, _ in shared.core_nodes:
+            try:
+                ipaddress.IPv4Address(host)
+            except ipaddress.AddressValueError:
+                try:
+                    ipaddress.IPv6Address(host)
+                except ipaddress.AddressValueError:
+                    self.fail('Found not an IP address in the core nodes')
+                break
+        else:
+            self.fail('No IPv6 address found in the core nodes')
+
+    def test_bootstrap(self):
+        """Start bootstrappers and check node pool"""
+        if shared.core_nodes:
+            shared.core_nodes = set()
+        if shared.unchecked_node_pool:
+            shared.unchecked_node_pool = set()
+
+        self._make_initial_nodes()
+        self.assertEqual(len(shared.unchecked_node_pool), 0)
+
+        for node in shared.core_nodes:
+            c = connection.Bootstrapper(*node)
+            c.start()
+            c.join()
+            if len(shared.unchecked_node_pool) > 2:
+                break
+        else:
+            self.fail(
+                'Failed to find at least 3 nodes'
+                ' after running %s bootstrappers' % len(shared.core_nodes))
 
     def test_connection(self):
         """Check a normal connection - should receive objects"""
@@ -215,3 +249,31 @@ class TestListener(TestProcessProto):
                         if c.status == 'fully_established':
                             self.fail('Established a connection')
                     time.sleep(0.5)
+
+
+class TestBootstrapProcess(TestProcessProto):
+    """A separate test case for bootstrapping with a minode process"""
+    _listen = True
+    _connection_limit = 24
+
+    def test_bootstrap(self):
+        """Start a bootstrapper for the local process and check node pool"""
+        if shared.unchecked_node_pool:
+            shared.unchecked_node_pool = set()
+
+        started = time.time()
+        while not self.connections():
+            if time.time() - started > 60:
+                self.fail('Failed to establish a connection')
+            time.sleep(1)
+
+        for _ in range(3):
+            c = connection.Bootstrapper('127.0.0.1', 8444)
+            c.start()
+            c.join()
+            if len(shared.unchecked_node_pool) > 2:
+                break
+        else:
+            self.fail(
+                'Failed to find at least 3 nodes'
+                ' after 3 tries to bootstrap with the local process')

@@ -11,7 +11,7 @@ objects inside the network.
 
 ## Running
 ```
-git clone https://git.bitmessage.org/lee.miller/MiNode.git
+git clone https://git.bitmessage.org/Bitmessage/MiNode.git
 ```
 ```
 cd MiNode
@@ -20,7 +20,7 @@ cd MiNode
 
 It is worth noting that the `start.sh` script no longer tries to do a
 `git pull` in order to update to the latest version.
-Is is now done by the `update.sh` script.
+It is now done by the `update.sh` script.
 
 ## Command line
 ```

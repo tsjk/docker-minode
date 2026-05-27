@@ -39,3 +39,4 @@ class Listener(threading.Thread):
                     c = Connection(*addr[:2], conn, server=True)
                     c.start()
                     shared.connections.add(c)
+                    c = None

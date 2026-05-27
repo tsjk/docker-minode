@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Common reusable code for all the I2P entities"""
 import base64
 import hashlib
 import threading
 
 
 def receive_line(s):
+    """Receive a line from the socket *s*"""
     data = b''
     while b'\n' not in data:
         d = s.recv(4096)
@@ -36,6 +38,7 @@ class I2PThread(threading.Thread):
 
 
 def pub_from_priv(priv):
+    """Returns the public key for the private key *priv*"""
     priv = base64.b64decode(priv, altchars=b'-~')
     # 256 for public key + 128 for signing key + 3 for certificate header
     # + value of bytes priv[385:387]
@@ -44,6 +47,7 @@ def pub_from_priv(priv):
 
 
 def b32_from_pub(pub):
+    """Converts the public key *pub* to base32 host name"""
     return base64.b32encode(
         hashlib.sha256(base64.b64decode(pub, b'-~')).digest()
     ).replace(b'=', b'').lower() + b'.b32.i2p'
